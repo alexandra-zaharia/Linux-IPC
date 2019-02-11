@@ -6,6 +6,6 @@ set(GCC_COVERAGE_COMPILE_FLAGS "-g -Wall")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
-add_executable(server utils.c unix_domain_sockets/server.c)
+add_executable(server_no_multiplexing utils.c unix_domain_sockets/no_multiplexing/server.c)
 add_executable(client utils.c unix_domain_sockets/client.c)
-install(TARGETS server client DESTINATION unix_domain_sockets)
+install(TARGETS server_no_multiplexing client DESTINATION unix_domain_sockets/no_multiplexing)
