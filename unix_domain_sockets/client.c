@@ -52,21 +52,11 @@ int main()
          printf(GREEN "Number of bytes written: %d; data sent: %d\n" RESET, num_written, value);
      } while (value != 0);
 
-     // Request result
-     char buffer[BUFFER_SIZE];
-     /*memset(buffer, 0, BUFFER_SIZE);
-     strncpy(buffer, "Sum", strlen("Sum") + 1);
-     buffer[strlen(buffer)] = '\0';
-     printf(GREEN "Buffer: %s\n" RESET, buffer);
-
-     if (write(data_socket, buffer, strlen(buffer)) == -1)
-         error_message("Error in requesting result from server");*/
-
      // Receive result
+     char buffer[BUFFER_SIZE];
      memset(buffer, 0, BUFFER_SIZE);
      if (read(data_socket, buffer, BUFFER_SIZE) == -1)
          error_message("Error in reading result from server");
-
      buffer[BUFFER_SIZE - 1] = '\0';
      printf(GREEN "%s\n" RESET, buffer);
 
