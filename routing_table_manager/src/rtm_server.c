@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "utils.h"
 #include "linked_list.h"
+#include "rtm.h"
 
 int main()
 {
