@@ -10,6 +10,7 @@ This repo contains several programs, organized as follows:
 
 * `unix_domain_sockets` -- client/server implementation using stream-based UNIX domain sockets
   * `no_multiplexing` -- in this implementation, the server is not multiplexed, meaning it can only serve one client at a time
+  * `multiplexing` -- in this implementation, the server is multiplexed, meaning it can serve several clients at a time (using the `select()` system call)
 
 ## Compiling and running the code examples
 Binaries for all programs are provided in the [`bin`](https://github.com/alexandra-zaharia/Linux-IPC/tree/master/bin) directory.
