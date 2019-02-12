@@ -18,12 +18,26 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include "utils.h"
 
 #define SOCKET_PATH "/tmp/DemoSocket"  // master (connection) socket path
 #define BACKLOG 20                     // maximum size of pending connections
 #define BUFFER_SIZE 128                // size of a message between client and server
 
+int connection_socket;                 // master socket
+
+
+// Handles SIGINT (Ctrl+C) signal by closing the server (client process is left running)
+void shutdown_server(int sig)
+{
+    // Close master socket and release socket resource
+    close(connection_socket);
+    status_message("Connection closed");
+    unlink(SOCKET_PATH);
+
+    exit(EXIT_SUCCESS);
+}
 
 int main()
 {
@@ -31,7 +45,7 @@ int main()
     unlink(SOCKET_PATH);
 
     // Create the master (connection) socket
-    int connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (connection_socket == -1)
         error_message("Cannot create master socket");
     status_message("Master socket created");
@@ -51,6 +65,7 @@ int main()
     if (listen(connection_socket, BACKLOG) == -1)
         error_message("Cannot set master socket as listening socket");
 
+    signal(SIGINT, shutdown_server);
     for (;;) { // handle client connections iteratively
         /* Accept a connection on a new socket ('data_socket'). The listening socket
          * ('connection_socket') remains open and can be used to accept further connections. */
@@ -89,11 +104,4 @@ int main()
         // Close client socket
         close(data_socket);
     }
-
-    // Close master socket and release socket resource
-    close(connection_socket);
-    status_message("Connection closed");
-    unlink(SOCKET_PATH);
-
-    exit(EXIT_SUCCESS);
 }

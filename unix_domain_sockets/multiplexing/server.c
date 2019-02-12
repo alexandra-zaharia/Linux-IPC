@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include "utils.h"
 #include "fd_set_mgmt.h"
 
@@ -25,6 +26,19 @@
 #define BACKLOG 20                     // maximum size of pending connections
 #define BUFFER_SIZE 128                // size of a message between client and server
 
+int connection_socket;                 // master socket
+
+
+// Handles SIGINT (Ctrl+C) signal by closing the server (client processes are left running)
+void shutdown_server(int sig)
+{
+    // Close master socket and release socket resource
+    close(connection_socket);
+    remove_from_monitored_fd_set(connection_socket);
+    status_message("Connection closed");
+    unlink(SOCKET_PATH);
+    exit(EXIT_SUCCESS);
+}
 
 int main()
 {
@@ -36,7 +50,7 @@ int main()
     add_to_monitored_fd_set(0);
 
     // Create the master (connection) socket
-    int connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (connection_socket == -1)
         error_message("Cannot create master socket");
     status_message("Master socket created");
@@ -61,6 +75,7 @@ int main()
 
     fd_set readfds;
     char buffer[BUFFER_SIZE];
+    signal(SIGINT, shutdown_server);
     for (;;) { // handle client connections iteratively
         refresh_fd_set(&readfds); // copy all file descriptors to read_fds
 
@@ -115,12 +130,4 @@ int main()
             }
         }
     }
-
-    // Close master socket and release socket resource
-    close(connection_socket);
-    remove_from_monitored_fd_set(connection_socket);
-    status_message("Connection closed");
-    unlink(SOCKET_PATH);
-
-    exit(EXIT_SUCCESS);
 }
