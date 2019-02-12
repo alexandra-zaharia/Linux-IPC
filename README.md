@@ -22,7 +22,7 @@ git clone https://github.com/alexandra-zaharia/Linux-IPC.git
 cd Linux-IPC
 mkdir build
 cd build
-cmake make .. -DCMAKE_INSTALL_PREFIX=../bin 
+cmake .. -DCMAKE_INSTALL_PREFIX=../bin 
 make && make install
 cd ../bin
 ```
