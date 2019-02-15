@@ -27,7 +27,7 @@ int main()
     // Create data socket
     int data_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (data_socket == -1)
-        error_message("Cannot create client socket");
+        error_and_exit("Cannot create client socket");
 
      // Construct server socket address
      struct sockaddr_un addr;
@@ -37,28 +37,33 @@ int main()
 
      // Connect client socket to socket address
      if (connect(data_socket, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) == -1)
-         error_message("Cannot connect to server (is the server running?)");
+         error_and_exit("Cannot connect to server (is the server running?)");
 
      // Send integers for summation
-     int value;
+     int value = 0;
      do {
          printf("Enter integer to send to server (0 to stop): ");
-         scanf("%d", &value);
-         int num_written = write(data_socket, &value, sizeof(int));
+         while (read_int(&value) == -1) {
+             error_message("Not an integer. Try again.");
+         };
+         ssize_t num_written = write(data_socket, &value, sizeof(int));
          if (num_written == -1) {
-             fprintf(stderr, RED "Error in sending data to server\n" RESET);
+             error_and_exit("Error in sending data to server");
              break;
          }
-         printf(GREEN "Number of bytes written: %d; data sent: %d\n" RESET, num_written, value);
+         char write_successful[64];
+         sprintf(write_successful,
+                 "Number of bytes written: %zu; data sent: %d", num_written, value);
+         status_message(write_successful);
      } while (value != 0);
 
      // Receive result
      char buffer[BUFFER_SIZE];
      memset(buffer, 0, BUFFER_SIZE);
      if (read(data_socket, buffer, BUFFER_SIZE) == -1)
-         error_message("Error in reading result from server");
+         error_and_exit("Error in reading result from server");
      buffer[BUFFER_SIZE - 1] = '\0';
-     printf(GREEN "%s\n" RESET, buffer);
+     status_message(buffer);
 
      // Close socket
      close(data_socket);

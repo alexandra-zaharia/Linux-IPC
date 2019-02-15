@@ -52,7 +52,7 @@ int main()
     // Create the master (connection) socket
     connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (connection_socket == -1)
-        error_message("Cannot create master socket");
+        error_and_exit("Cannot create master socket");
     status_message("Master socket created");
 
     // Construct server socket address
@@ -63,12 +63,12 @@ int main()
 
     // Bind socket to socket address
     if (bind(connection_socket, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) == -1)
-        error_message("Cannot bind socket");
+        error_and_exit("Cannot bind socket");
     status_message("Master socket bound to socket address");
 
     // Make the master socket a listening socket
     if (listen(connection_socket, BACKLOG) == -1)
-        error_message("Cannot set master socket as listening socket");
+        error_and_exit("Cannot set master socket as listening socket");
 
     // Add master socket to monitored fd_set
     add_to_monitored_fd_set(connection_socket);
@@ -87,13 +87,13 @@ int main()
             status_message("New connection received, accepting the connection");
             int data_socket = accept(connection_socket, NULL, NULL);
             if (data_socket == -1)
-                error_message("Cannot accept client connection");
+                error_and_exit("Cannot accept client connection");
             status_message("Connection accepted from client");
             add_to_monitored_fd_set(data_socket);
         } else if (FD_ISSET(0, &readfds)) {
             memset(buffer, 0, BUFFER_SIZE);
             if (read(0, buffer, BUFFER_SIZE) == -1)
-                error_message("Cannot read data from console");
+                error_and_exit("Cannot read data from console");
             printf("Input read from console: %s\n", buffer);
         } else { // data arrives on client file descriptor
             for (int i = 0; i < MAX_CLIENTS; i++) {
@@ -106,7 +106,7 @@ int main()
                     // Wait for next data packet ('read' is a blocking system call)
                     status_message("Waiting for data from the client");
                     if (read(comm_socket_fd, buffer, BUFFER_SIZE) == -1)
-                        error_message("Cannot read data from client");
+                        error_and_exit("Cannot read data from client");
 
                     // Add received data to sum
                     int data;
@@ -117,7 +117,7 @@ int main()
                         sprintf(buffer, "Result = %d", client_result[i]);
                         status_message("Sending final result back to client");
                         if (write(comm_socket_fd, buffer, BUFFER_SIZE) == -1)
-                            error_message("Cannot send sum to client");
+                            error_and_exit("Cannot send sum to client");
 
                         // Close client socket
                         close(comm_socket_fd);

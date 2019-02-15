@@ -10,6 +10,8 @@
 #define GREEN   "\033[32m"      /* Green */
 
 void error_message(char*);
+void error_and_exit(char*);
 void status_message(char*);
+int read_int(int*);
 
 #endif //LINUX_IPC_UTILS_H

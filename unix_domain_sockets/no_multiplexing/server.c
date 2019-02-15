@@ -47,7 +47,7 @@ int main()
     // Create the master (connection) socket
     connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (connection_socket == -1)
-        error_message("Cannot create master socket");
+        error_and_exit("Cannot create master socket");
     status_message("Master socket created");
 
     // Construct server socket address
@@ -58,12 +58,12 @@ int main()
 
     // Bind socket to socket address
     if (bind(connection_socket, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) == -1)
-        error_message("Cannot bind socket");
+        error_and_exit("Cannot bind socket");
     status_message("Master socket bound to socket address");
 
     // Make the master socket a listening socket
     if (listen(connection_socket, BACKLOG) == -1)
-        error_message("Cannot set master socket as listening socket");
+        error_and_exit("Cannot set master socket as listening socket");
 
     signal(SIGINT, shutdown_server);
     for (;;) { // handle client connections iteratively
@@ -72,7 +72,7 @@ int main()
         status_message("Waiting on accept() system call");
         int data_socket = accept(connection_socket, NULL, NULL);
         if (data_socket == -1)
-            error_message("Cannot accept client connection");
+            error_and_exit("Cannot accept client connection");
         status_message("Connection accepted from client");
 
         int sum = 0;
@@ -84,7 +84,7 @@ int main()
             // Wait for next data packet ('read' is a blocking system call)
             status_message("Waiting for data from the client");
             if (read(data_socket, buffer, BUFFER_SIZE) == -1)
-                error_message("Cannot read data from client");
+                error_and_exit("Cannot read data from client");
 
             // Add received data to sum
             int data;
@@ -99,7 +99,7 @@ int main()
         sprintf(buffer, "Result = %d", sum);
         status_message("Sending final result back to client");
         if (write(data_socket, buffer, BUFFER_SIZE) == -1)
-            error_message("Cannot send sum to client");
+            error_and_exit("Cannot send sum to client");
 
         // Close client socket
         close(data_socket);
