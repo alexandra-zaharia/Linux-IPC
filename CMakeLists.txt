@@ -16,9 +16,11 @@ add_executable(server_multiplexing
         unix_domain_sockets/multiplexing/fd_set_mgmt.c)
 add_executable(client utils.c unix_domain_sockets/client.c)
 
-add_executable(rtm_server utils.c routing_table_manager/src/rtm_server.c)
-add_executable(rtm_client utils.c routing_table_manager/src/rtm_client.c)
-find_library(GCDS gcds HINTS routing_table_manager/lib)
+set(RTM_DIR routing_table_manager)
+set(RTM_SRC ${RTM_DIR}/src)
+add_executable(rtm_server utils.c ${RTM_SRC}/rtm_server.c ${RTM_SRC}/rtm.c)
+add_executable(rtm_client utils.c ${RTM_SRC}/rtm_client.c ${RTM_SRC}/rtm.c)
+find_library(GCDS gcds HINTS ${RTM_DIR}/lib)
 target_link_libraries(rtm_server PUBLIC ${GCDS})
 target_link_libraries(rtm_client PUBLIC ${GCDS})
 
