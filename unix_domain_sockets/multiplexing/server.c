@@ -40,6 +40,7 @@ void shutdown_server(int sig)
     exit(EXIT_SUCCESS);
 }
 
+
 int main()
 {
     // Remove the socket in case the program had previously exited abnormally

@@ -17,15 +17,29 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include "utils.h"
 
 #define SOCKET_PATH "/tmp/DemoSocket"  // master (connection) socket path
 #define BUFFER_SIZE 128                // size of a message between client and server
 
+int data_socket;                       // client socket
+
+
+// Handles SIGINT (Ctrl+C) signal by closing the client connection
+void shutdown_client(int sig)
+{
+    close(data_socket);
+    status_message("Connection closed");
+
+    exit(EXIT_SUCCESS);
+}
+
+
 int main()
 {
     // Create data socket
-    int data_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    data_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (data_socket == -1)
         error_and_exit("Cannot create client socket");
 
@@ -41,6 +55,7 @@ int main()
 
      // Send integers for summation
      int value = 0;
+     signal(SIGINT, shutdown_client);
      do {
          printf("Enter integer to send to server (0 to stop): ");
          while (read_int(&value) == -1) {
@@ -66,7 +81,5 @@ int main()
      status_message(buffer);
 
      // Close socket
-     close(data_socket);
-
-     exit(EXIT_SUCCESS);
+     shutdown_client(SIGINT);
 }
