@@ -28,19 +28,38 @@
 int connection_socket;                 // master socket
 
 
-// Handles SIGINT (Ctrl+C) signal by closing the server (client process is left running)
-void shutdown_server(int sig)
-{
-    // Close master socket and release socket resource
-    close(connection_socket);
-    status_message("Connection closed.");
-    unlink(SOCKET_PATH);
-
-    exit(EXIT_SUCCESS);
-}
+void initialize_server();
+int handle_connection_initiation_request();
+void handle_service_request(int data_socket, char* buffer, int* sum);
+void shutdown_server(int sig);
 
 
 int main()
+{
+    initialize_server();
+
+    for (;;) { // handle client connections iteratively
+        int data_socket = handle_connection_initiation_request();
+
+        int sum = 0;
+        char buffer[BUFFER_SIZE];
+        handle_service_request(data_socket, buffer, &sum);
+
+        // Send the result to the client
+        memset(buffer, 0, BUFFER_SIZE);
+        sprintf(buffer, "Result = %d", sum);
+        status_message("Sending final result back to client.");
+        if (write(data_socket, buffer, BUFFER_SIZE) == -1)
+            error_message("Cannot send sum to client.");
+
+        // Close client socket
+        close(data_socket);
+    }
+}
+
+
+// Initializes the server
+void initialize_server()
 {
     // Remove the socket in case the program had previously exited abnormally
     unlink(SOCKET_PATH);
@@ -68,43 +87,50 @@ int main()
 
     signal(SIGINT, shutdown_server); // register SIGINT handler to shutdown server cleanly
     signal(SIGPIPE, SIG_IGN); // ignore SIGPIPE: when client disconnects without waiting for message
+}
 
-    for (;;) { // handle client connections iteratively
-        /* Accept a connection on a new socket ('data_socket'). The listening socket
-         * ('connection_socket') remains open and can be used to accept further connections. */
-        status_message("Waiting on accept() system call.");
-        int data_socket = accept(connection_socket, NULL, NULL);
-        if (data_socket == -1)
-            error_and_exit("Cannot accept client connection.");
-        status_message("Connection accepted from client.");
 
-        int sum = 0;
-        char buffer[BUFFER_SIZE];
-        for (;;) {
-            // Prepare the buffer to receive the data
-            memset(buffer, 0, BUFFER_SIZE);
+// Accepts a new connection from a client and returns the file descriptor for the new socket.
+int handle_connection_initiation_request()
+{
+    status_message("Waiting on accept() system call.");
+    int data_socket = accept(connection_socket, NULL, NULL);
+    if (data_socket == -1)
+        error_and_exit("Cannot accept client connection.");
+    status_message("Connection accepted from client.");
+    return data_socket;
+}
 
-            // Wait for next data packet ('read' is a blocking system call)
-            status_message("Waiting for data from the client.");
-            if (read(data_socket, buffer, BUFFER_SIZE) == -1)
-                error_and_exit("Cannot read data from client.");
 
-            // Add received data to sum
-            int data;
-            memcpy(&data, buffer, sizeof(int));
-            if (data == 0)
-                break;
-            sum += data;
-        }
-
-        // Send the result to the client
+// Handles service requests from a client using the specified socket file descriptor.
+void handle_service_request(const int data_socket, char* buffer, int* sum)
+{
+    for (;;) {
+        // Prepare the buffer to receive the data
         memset(buffer, 0, BUFFER_SIZE);
-        sprintf(buffer, "Result = %d", sum);
-        status_message("Sending final result back to client.");
-        if (write(data_socket, buffer, BUFFER_SIZE) == -1)
-            error_message("Cannot send sum to client.");
 
-        // Close client socket
-        close(data_socket);
+        // Wait for next data packet ('read' is a blocking system call)
+        status_message("Waiting for data from the client.");
+        if (read(data_socket, buffer, BUFFER_SIZE) == -1)
+            error_and_exit("Cannot read data from client.");
+
+        // Add received data to sum
+        int data;
+        memcpy(&data, buffer, sizeof(int));
+        if (data == 0)
+            break;
+        *sum += data;
     }
+}
+
+
+// Handles SIGINT (Ctrl+C) signal by closing the server (client process is left running)
+void shutdown_server(int sig)
+{
+    // Close master socket and release socket resource
+    close(connection_socket);
+    status_message("Connection closed.");
+    unlink(SOCKET_PATH);
+
+    exit(EXIT_SUCCESS);
 }
