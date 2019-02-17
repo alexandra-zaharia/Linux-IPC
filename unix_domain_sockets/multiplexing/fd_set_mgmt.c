@@ -40,7 +40,7 @@ void remove_from_monitored_fd_set(int socket_fd)
 
 
 // Clone all file descriptors from the monitored fd_set into the fd_est
-void refresh_fd_set(fd_set* fd_set_ptr)
+void refresh_fd_set(fd_set *fd_set_ptr)
 {
     FD_ZERO(fd_set_ptr);
     for (int i = 0; i < MAX_CLIENTS; i++) {
