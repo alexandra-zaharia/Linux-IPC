@@ -28,14 +28,7 @@
 int data_socket;                       // client socket
 
 
-// Handles SIGINT (Ctrl+C) signal by closing the client connection
-void shutdown_client(int sig)
-{
-    close(data_socket);
-    status_message("Connection closed.");
-
-    exit(EXIT_SUCCESS);
-}
+void shutdown_client(int sig);
 
 
 int main()
@@ -52,8 +45,8 @@ int main()
     strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path) - 1);
 
     // Connect client socket to socket address
-    if (connect(data_socket, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) == -1)
-     error_and_exit("Cannot connect to server (is the server running?).");
+    if (connect(data_socket, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1)
+        error_and_exit("Cannot connect to server (is the server running?).");
 
     signal(SIGINT, shutdown_client); // register SIGINT handler to shutdown client cleanly
     signal(SIGPIPE, SIG_IGN); // ignore SIGPIPE (server disconnects)
@@ -76,7 +69,7 @@ int main()
             error_message("Error in sending data to server.");
             if (errno == EPIPE) {
                 error_message("Server has disconnected. Quitting.");
-                exit(EXIT_FAILURE);
+                raise(SIGINT);
             }
             break;
         }
@@ -90,10 +83,20 @@ int main()
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
     if (read(data_socket, buffer, BUFFER_SIZE) == -1)
-     error_and_exit("Error in reading result from server.");
+        error_and_exit("Error in reading result from server.");
     buffer[BUFFER_SIZE - 1] = '\0';
     status_message(buffer);
 
     // Close socket
     shutdown_client(SIGINT);
+}
+
+
+// Handles SIGINT (Ctrl+C) signal by closing the client connection
+void shutdown_client(int sig)
+{
+    close(data_socket);
+    status_message("Connection closed.");
+
+    exit(EXIT_SUCCESS);
 }

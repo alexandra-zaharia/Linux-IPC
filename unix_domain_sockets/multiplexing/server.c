@@ -17,7 +17,6 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <string.h>
 #include <signal.h>
 #include "utils.h"
 #include "fd_set_mgmt.h"
@@ -31,7 +30,7 @@ int connection_socket;                 // master socket
 
 void initialize_server();
 void handle_connection_initiation_request();
-void handle_service_request(fd_set read_fds, char* buffer);
+void handle_service_request(fd_set read_fds, char *buffer);
 void shutdown_server(int sig);
 
 
@@ -86,7 +85,7 @@ void initialize_server()
     strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path) - 1);
 
     // Bind socket to socket address
-    if (bind(connection_socket, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) == -1)
+    if (bind(connection_socket, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1)
         error_and_exit("Cannot bind socket.");
     status_message("Master socket bound to socket address.");
 
@@ -115,7 +114,7 @@ void handle_connection_initiation_request()
 
 
 // Handles service requests from clients
-void handle_service_request(fd_set read_fds, char* buffer)
+void handle_service_request(fd_set read_fds, char *buffer)
 {
     for (int i = 0; i < MAX_CLIENTS; i++) {
         if (FD_ISSET(monitored_fd_set[i], &read_fds)) {

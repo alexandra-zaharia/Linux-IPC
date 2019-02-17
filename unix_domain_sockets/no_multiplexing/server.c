@@ -17,7 +17,6 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <string.h>
 #include <signal.h>
 #include "utils.h"
 
@@ -30,7 +29,7 @@ int connection_socket;                 // master socket
 
 void initialize_server();
 int handle_connection_initiation_request();
-void handle_service_request(int data_socket, char* buffer, int* sum);
+void handle_service_request(int data_socket, char *buffer, int *sum);
 void shutdown_server(int sig);
 
 
@@ -77,7 +76,7 @@ void initialize_server()
     strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path) - 1);
 
     // Bind socket to socket address
-    if (bind(connection_socket, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) == -1)
+    if (bind(connection_socket, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1)
         error_and_exit("Cannot bind socket.");
     status_message("Master socket bound to socket address.");
 
@@ -103,7 +102,7 @@ int handle_connection_initiation_request()
 
 
 // Handles service requests from a client using the specified socket file descriptor.
-void handle_service_request(const int data_socket, char* buffer, int* sum)
+void handle_service_request(const int data_socket, char *buffer, int *sum)
 {
     for (;;) {
         // Prepare the buffer to receive the data
