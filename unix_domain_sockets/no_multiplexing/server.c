@@ -33,7 +33,7 @@ void shutdown_server(int sig)
 {
     // Close master socket and release socket resource
     close(connection_socket);
-    status_message("Connection closed");
+    status_message("Connection closed.");
     unlink(SOCKET_PATH);
 
     exit(EXIT_SUCCESS);
@@ -48,8 +48,8 @@ int main()
     // Create the master (connection) socket
     connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (connection_socket == -1)
-        error_and_exit("Cannot create master socket");
-    status_message("Master socket created");
+        error_and_exit("Cannot create master socket.");
+    status_message("Master socket created.");
 
     // Construct server socket address
     struct sockaddr_un addr;
@@ -59,22 +59,24 @@ int main()
 
     // Bind socket to socket address
     if (bind(connection_socket, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) == -1)
-        error_and_exit("Cannot bind socket");
-    status_message("Master socket bound to socket address");
+        error_and_exit("Cannot bind socket.");
+    status_message("Master socket bound to socket address.");
 
     // Make the master socket a listening socket
     if (listen(connection_socket, BACKLOG) == -1)
-        error_and_exit("Cannot set master socket as listening socket");
+        error_and_exit("Cannot set master socket as listening socket.");
 
-    signal(SIGINT, shutdown_server);
+    signal(SIGINT, shutdown_server); // register SIGINT handler to shutdown server cleanly
+    signal(SIGPIPE, SIG_IGN); // ignore SIGPIPE: when client disconnects without waiting for message
+
     for (;;) { // handle client connections iteratively
         /* Accept a connection on a new socket ('data_socket'). The listening socket
          * ('connection_socket') remains open and can be used to accept further connections. */
-        status_message("Waiting on accept() system call");
+        status_message("Waiting on accept() system call.");
         int data_socket = accept(connection_socket, NULL, NULL);
         if (data_socket == -1)
-            error_and_exit("Cannot accept client connection");
-        status_message("Connection accepted from client");
+            error_and_exit("Cannot accept client connection.");
+        status_message("Connection accepted from client.");
 
         int sum = 0;
         char buffer[BUFFER_SIZE];
@@ -83,9 +85,9 @@ int main()
             memset(buffer, 0, BUFFER_SIZE);
 
             // Wait for next data packet ('read' is a blocking system call)
-            status_message("Waiting for data from the client");
+            status_message("Waiting for data from the client.");
             if (read(data_socket, buffer, BUFFER_SIZE) == -1)
-                error_and_exit("Cannot read data from client");
+                error_and_exit("Cannot read data from client.");
 
             // Add received data to sum
             int data;
@@ -98,9 +100,9 @@ int main()
         // Send the result to the client
         memset(buffer, 0, BUFFER_SIZE);
         sprintf(buffer, "Result = %d", sum);
-        status_message("Sending final result back to client");
+        status_message("Sending final result back to client.");
         if (write(data_socket, buffer, BUFFER_SIZE) == -1)
-            error_and_exit("Cannot send sum to client");
+            error_message("Cannot send sum to client.");
 
         // Close client socket
         close(data_socket);
