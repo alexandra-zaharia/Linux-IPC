@@ -12,6 +12,9 @@
 void error_message(char*);
 void error_and_exit(char*);
 void status_message(char*);
-int read_int(int*);
+
+int read_line(char* buffer, int n);
+int read_int_from_stdin(int*);
+int read_int_from_buffer(const char*, int*);
 
 #endif //LINUX_IPC_UTILS_H

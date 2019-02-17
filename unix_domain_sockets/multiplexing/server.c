@@ -35,7 +35,7 @@ void shutdown_server(int sig)
     // Close master socket and release socket resource
     close(connection_socket);
     remove_from_monitored_fd_set(connection_socket);
-    status_message("Connection closed");
+    status_message("Connection closed.");
     unlink(SOCKET_PATH);
     exit(EXIT_SUCCESS);
 }
@@ -48,13 +48,13 @@ int main()
 
     // Initialize monitored fd_set
     initialize_monitor_fd_set();
-    add_to_monitored_fd_set(0);
+    add_to_monitored_fd_set(0); // add STDIN to monitored file descriptors
 
     // Create the master (connection) socket
     connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (connection_socket == -1)
-        error_and_exit("Cannot create master socket");
-    status_message("Master socket created");
+        error_and_exit("Cannot create master socket.");
+    status_message("Master socket created.");
 
     // Construct server socket address
     struct sockaddr_un addr;
@@ -64,37 +64,39 @@ int main()
 
     // Bind socket to socket address
     if (bind(connection_socket, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) == -1)
-        error_and_exit("Cannot bind socket");
-    status_message("Master socket bound to socket address");
+        error_and_exit("Cannot bind socket.");
+    status_message("Master socket bound to socket address.");
 
     // Make the master socket a listening socket
     if (listen(connection_socket, BACKLOG) == -1)
-        error_and_exit("Cannot set master socket as listening socket");
+        error_and_exit("Cannot set master socket as listening socket.");
 
     // Add master socket to monitored fd_set
     add_to_monitored_fd_set(connection_socket);
 
+    signal(SIGINT, shutdown_server); // register SIGINT handler to shutdown server cleanly
+    signal(SIGPIPE, SIG_IGN); // ignore SIGPIPE: when client disconnects without waiting for message
+
     fd_set readfds;
     char buffer[BUFFER_SIZE];
-    signal(SIGINT, shutdown_server);
     for (;;) { // handle client connections iteratively
         refresh_fd_set(&readfds); // copy all file descriptors to read_fds
 
         // Server process blocks on select() system call
-        status_message("Waiting on select() system call");
+        status_message("Waiting on select() system call.");
         select(get_max_fd() + 1, &readfds, NULL, NULL, NULL);
 
         if (FD_ISSET(connection_socket, &readfds)) { // connection initiation request from client
-            status_message("New connection received, accepting the connection");
+            status_message("New connection received, accepting the connection.");
             int data_socket = accept(connection_socket, NULL, NULL);
             if (data_socket == -1)
-                error_and_exit("Cannot accept client connection");
-            status_message("Connection accepted from client");
+                error_and_exit("Cannot accept client connection.");
+            status_message("Connection accepted from client.");
             add_to_monitored_fd_set(data_socket);
         } else if (FD_ISSET(0, &readfds)) {
             memset(buffer, 0, BUFFER_SIZE);
             if (read(0, buffer, BUFFER_SIZE) == -1)
-                error_and_exit("Cannot read data from console");
+                error_and_exit("Cannot read data from console.");
             printf("Input read from console: %s\n", buffer);
         } else { // data arrives on client file descriptor
             for (int i = 0; i < MAX_CLIENTS; i++) {
@@ -105,9 +107,9 @@ int main()
                     memset(buffer, 0, BUFFER_SIZE);
 
                     // Wait for next data packet ('read' is a blocking system call)
-                    status_message("Waiting for data from the client");
+                    status_message("Waiting for data from the client.");
                     if (read(comm_socket_fd, buffer, BUFFER_SIZE) == -1)
-                        error_and_exit("Cannot read data from client");
+                        error_and_exit("Cannot read data from client.");
 
                     // Add received data to sum
                     int data;
@@ -116,9 +118,9 @@ int main()
                         // Send the result to the client
                         memset(buffer, 0, BUFFER_SIZE);
                         sprintf(buffer, "Result = %d", client_result[i]);
-                        status_message("Sending final result back to client");
+                        status_message("Sending final result back to client.");
                         if (write(comm_socket_fd, buffer, BUFFER_SIZE) == -1)
-                            error_and_exit("Cannot send sum to client");
+                            error_message("Cannot send sum to client.");
 
                         // Close client socket
                         close(comm_socket_fd);
