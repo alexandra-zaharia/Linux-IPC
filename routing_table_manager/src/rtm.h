@@ -14,6 +14,7 @@ typedef enum { // operation code for possible actions to be taken on the routing
 } OP_CODE;
 
 typedef unsigned short u16;
+#define MASK_MIN 0  // minimum value of destination subnet mask
 #define MASK_MAX 32 // maximum value of destination subnet mask
 
 typedef struct _msg_body { // RTM entry to create, update, or delete

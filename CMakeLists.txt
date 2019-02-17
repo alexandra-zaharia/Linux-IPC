@@ -18,7 +18,7 @@ add_executable(client utils.c unix_domain_sockets/client.c)
 
 set(RTM_DIR routing_table_manager)
 set(RTM_SRC ${RTM_DIR}/src)
-add_executable(rtm_server utils.c ${RTM_SRC}/rtm_server.c ${RTM_SRC}/rtm.c)
+add_executable(rtm_server utils.c ${RTM_SRC}/rtm_server.c ${RTM_SRC}/rtm.c ${RTM_SRC}/input.c)
 add_executable(rtm_client utils.c ${RTM_SRC}/rtm_client.c ${RTM_SRC}/rtm.c)
 find_library(GCDS gcds HINTS ${RTM_DIR}/lib)
 target_link_libraries(rtm_server PUBLIC ${GCDS})

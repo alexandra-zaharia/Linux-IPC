@@ -6,8 +6,18 @@
 #include "utils.h"
 #include "linked_list.h"
 #include "rtm.h"
+#include "input.h"
 
 int main()
 {
     printf("server\n");
+
+    char ip_addr[IP_ADDR_LEN];
+    printf("Enter IP address (xxx.xxx.xxx.xxx): ");
+    printf("%s\n", read_ip_address_from_stdin(ip_addr) == 0 ? "valid" : "invalid");
+
+    char dst_subnet[IP_ADDR_LEN + 3];
+    u16 mask;
+    printf("Enter dst subnet (xxx.xxx.xxx.xxx/yy): ");
+    printf("%s\n", read_destination_subnet(dst_subnet, ip_addr, &mask) == 0 ? "valid" : "invalid");
 }
