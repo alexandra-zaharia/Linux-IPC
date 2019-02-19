@@ -51,6 +51,8 @@ int read_line(char *buffer, const int n)
 // Returns 0 if the buffer contains a valid integer, and -1 otherwise.
 int _check_int(const char *buffer)
 {
+    if (!buffer) return -1;
+
     char *end_ptr;
     long value = strtol(buffer, &end_ptr, 10);
 
