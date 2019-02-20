@@ -24,6 +24,7 @@ int main()
             case 'c':
             case 'C': {
                 printf("[creating a record...]\n");
+                create_record(rtm);
                 rtm->size++; // TODO remove
             }; break;
             case 'u':

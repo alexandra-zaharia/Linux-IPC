@@ -4,6 +4,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include "rtm.h"
 #include "input.h"
 #include "utils.h"
 
@@ -82,4 +83,36 @@ int read_destination_subnet(char *dst_subnet, char *ip_address, u16 *mask)
     if (read_ip_address_from_buffer(buffer) == -1) return -1;
 
     return 0;
+}
+
+
+// Prompts the administrator to enter a new routing table record.
+void create_record()
+{
+    printf("Enter a new record:\n");
+
+    char sub_addr[IP_ADDR_LEN];
+    char dst_subnet[IP_ADDR_LEN + 3];
+    u16 mask;
+    printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
+    if (read_destination_subnet(dst_subnet, sub_addr, &mask) == -1) {
+        error_message("Incorrect destination subnet format.");
+        return;
+    }
+
+    char gw_addr[IP_ADDR_LEN];
+    printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
+    if (read_ip_address_from_stdin(gw_addr) == -1) {
+        error_message("Incorrect IP address format.");
+        return;
+    }
+
+    char oif[OIF_LEN];
+    printf("\tEnter outgoing interface: ");
+    if (read_line(oif, OIF_LEN) == -1) {
+        error_message("Invalid outgoing interface.");
+        return;
+    }
+
+    printf("Adding record %s/%hu %s %s\n", sub_addr, mask, gw_addr, oif);
 }
