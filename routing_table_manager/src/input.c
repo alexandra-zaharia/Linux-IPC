@@ -95,23 +95,23 @@ void create_record()
     char dst_subnet[IP_ADDR_LEN + 3];
     u16 mask;
     printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
-    if (read_destination_subnet(dst_subnet, sub_addr, &mask) == -1) {
-        error_message("Incorrect destination subnet format.");
-        return;
+    while (read_destination_subnet(dst_subnet, sub_addr, &mask) == -1) {
+        error_message("\tIncorrect destination subnet format. Try again.");
+        printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
     }
 
     char gw_addr[IP_ADDR_LEN];
     printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
-    if (read_ip_address_from_stdin(gw_addr) == -1) {
-        error_message("Incorrect IP address format.");
-        return;
+    while (read_ip_address_from_stdin(gw_addr) == -1) {
+        error_message("\tIncorrect IP address format. Try again.");
+        printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
     }
 
     char oif[OIF_LEN];
     printf("\tEnter outgoing interface: ");
-    if (read_line(oif, OIF_LEN) == -1) {
-        error_message("Invalid outgoing interface.");
-        return;
+    while (read_line(oif, OIF_LEN) == -1) {
+        error_message("\tInvalid outgoing interface. Try again.");
+        printf("\tEnter outgoing interface: ");
     }
 
     printf("Adding record %s/%hu %s %s\n", sub_addr, mask, gw_addr, oif);
