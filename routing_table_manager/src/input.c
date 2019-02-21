@@ -71,24 +71,27 @@ int read_destination_subnet(char *dst_subnet, char *ip_address, u16 *mask)
     if (read_line(dst_subnet, IP_ADDR_LEN + 3) == -1) return -1;
     if (strchr(dst_subnet, '/') == NULL) return -1;
 
-    // Get IP address
-    char *token = strtok(dst_subnet, "/");
-    strncpy(ip_address, token, IP_ADDR_LEN);
+    char *token;
+    int token_count = 0;
 
-    // Get and test mask
-    token = strtok(NULL, "/");
-    int _mask;
-    if (read_int_from_buffer(token, &_mask) == -1) return -1;
-    if (_mask < MASK_MIN || _mask > MASK_MAX) return -1;
-    *mask = (u16) _mask;
-
-    // Make sure there is nothing after the mask
-    if (strtok(NULL, "/")) return -1;
-
-    // Test IP address
-    char buffer[IP_ADDR_LEN];
-    strncpy(buffer, ip_address, IP_ADDR_LEN);
-    if (read_ip_address_from_buffer(buffer) == -1) return -1;
+    while ((token = strsep(&dst_subnet, "/")) != NULL) {
+        if (++token_count > 2) return -1;
+        switch (token_count) {
+            case 1: {
+                char buffer[IP_ADDR_LEN];
+                strncpy(buffer, token, IP_ADDR_LEN);
+                if (read_ip_address_from_buffer(buffer) == -1) return -1;
+                strncpy(ip_address, token, IP_ADDR_LEN);
+            }; break;
+            case 2: {
+                int _mask;
+                if (read_int_from_buffer(token, &_mask) == -1) return -1;
+                if (_mask < MASK_MIN || _mask > MASK_MAX) return -1;
+                *mask = (u16) _mask;
+            }; break;
+            default: return -1;
+        }
+    }
 
     return 0;
 }
