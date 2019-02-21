@@ -60,15 +60,12 @@ clean_fail:
 
 
 /*
- * Reads a destination subnet from the `dst_subnet` buffer in the form xxx.xxx.xxx.xxx/yy, where
- * xxx.xxx.xxx.xxx is an IPv4 address that follows the same rules as for
- * `read_ip_address_from_stdin`, and yy is the subnet mask (an integer between 0 and 32). The IPv4
- * address is stored in the `ip_address` buffer, and the subnet mask is stored in the u16 variable
- * pointed to by `mask`. Returns 0 on success and -1 on failure.
+ * Reads a destination subnet from the `dst_subnet` buffer in the form xxx.xxx.xxx.xxx/yy, where the
+ * IPv4 address xxx.xxx.xxx.xxx is stored into the `ip_address` buffer and the subnet mask yy is
+ * stored into `mask`. Returns 0 on success and -1 on failure.
  */
-int read_destination_subnet(char *dst_subnet, char *ip_address, u16 *mask)
+int read_destination_subnet_from_buffer(char *dst_subnet, char *ip_address, u16 *mask)
 {
-    if (read_line(dst_subnet, IP_ADDR_LEN + 3) == -1) return -1;
     if (strchr(dst_subnet, '/') == NULL) return -1;
 
     char *token;
@@ -97,6 +94,22 @@ int read_destination_subnet(char *dst_subnet, char *ip_address, u16 *mask)
 }
 
 
+/*
+ * Reads a destination subnet from STDIN into the `dst_subnet` buffer in the form
+ * xxx.xxx.xxx.xxx/yy, where xxx.xxx.xxx.xxx is an IPv4 address that follows the same rules as for
+ * `read_ip_address_from_stdin`, and yy is the subnet mask (an integer between 0 and 32). The IPv4
+ * address is stored in the `ip_address` buffer, and the subnet mask is stored in the u16 variable
+ * pointed to by `mask`. Returns 0 on success and -1 on failure.
+ */
+int read_destination_subnet_from_stdin(char *dst_subnet, char *ip_address, u16 *mask)
+{
+    if (read_line(dst_subnet, IP_ADDR_LEN + 3) == -1) return -1;
+    char dst_subnet_copy[IP_ADDR_LEN + 3];
+    strncpy(dst_subnet_copy, dst_subnet, IP_ADDR_LEN + 3);
+    return read_destination_subnet_from_buffer(dst_subnet_copy, ip_address, mask);
+}
+
+
 // Prompts the administrator to enter a new routing table record.
 void create_record()
 {
@@ -106,7 +119,7 @@ void create_record()
     char dst_subnet[IP_ADDR_LEN + 3];
     u16 mask;
     printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
-    while (read_destination_subnet(dst_subnet, sub_addr, &mask) == -1) {
+    while (read_destination_subnet_from_stdin(dst_subnet, sub_addr, &mask) == -1) {
         error_message("\tIncorrect destination subnet format. Try again.");
         printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
     }
