@@ -64,7 +64,7 @@ int main()
     char dst_subnet[IP_ADDR_LEN + 3];
     u16 mask;
     printf("Enter dst subnet (xxx.xxx.xxx.xxx/yy): ");
-    if (read_destination_subnet(dst_subnet, ip_addr, &mask) == 0) {
+    if (read_destination_subnet_from_stdin(dst_subnet, ip_addr, &mask) == 0) {
         printf("%s\n%hu\n", ip_addr, mask);
     } else {
         printf("invalid\n");
