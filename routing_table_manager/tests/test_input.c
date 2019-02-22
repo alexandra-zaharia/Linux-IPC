@@ -4,8 +4,10 @@
 
 
 #include <string.h>
+#include <limits.h>
 #include "unity.h"
 #include "input.h"
+#include "utils.h"
 
 
 void setUp(void)
@@ -17,6 +19,69 @@ void setUp(void)
 void tearDown()
 {
     // clean stuff up here
+}
+
+
+void test_read_int_from_buffer_accepts_correct_values()
+{
+    size_t BUF_SIZE = 32;
+    char buffer[BUF_SIZE];
+    int n;
+
+    snprintf(buffer, BUF_SIZE, "%d", 0);
+    TEST_ASSERT_EQUAL_INT(0, read_int_from_buffer(buffer, &n));
+    TEST_ASSERT_EQUAL_INT(n, 0);
+
+    snprintf(buffer, BUF_SIZE, "%d", -1);
+    TEST_ASSERT_EQUAL_INT(0, read_int_from_buffer(buffer, &n));
+    TEST_ASSERT_EQUAL_INT(n, -1);
+
+    snprintf(buffer, BUF_SIZE, "%d", 1);
+    TEST_ASSERT_EQUAL_INT(0, read_int_from_buffer(buffer, &n));
+    TEST_ASSERT_EQUAL_INT(n, 1);
+
+    snprintf(buffer, BUF_SIZE, "%d", INT_MIN);
+    TEST_ASSERT_EQUAL_INT(0, read_int_from_buffer(buffer, &n));
+    TEST_ASSERT_EQUAL_INT(n, INT_MIN);
+
+    snprintf(buffer, BUF_SIZE, "%d", INT_MAX);
+    TEST_ASSERT_EQUAL_INT(0, read_int_from_buffer(buffer, &n));
+    TEST_ASSERT_EQUAL_INT(n, INT_MAX);
+}
+
+
+void test_read_int_from_buffer_rejects_incorrect_values()
+{
+    size_t BUF_SIZE = 32;
+    char buffer[BUF_SIZE];
+    int n;
+
+    snprintf(buffer, BUF_SIZE, "%ld", LONG_MIN);
+    TEST_ASSERT_EQUAL_INT(-1, read_int_from_buffer(buffer, &n));
+
+    snprintf(buffer, BUF_SIZE, "%ld", LONG_MAX);
+    TEST_ASSERT_EQUAL_INT(-1, read_int_from_buffer(buffer, &n));
+
+    snprintf(buffer, BUF_SIZE, "%s", "123456789012345678901234567890");
+    TEST_ASSERT_EQUAL_INT(-1, read_int_from_buffer(buffer, &n));
+
+    snprintf(buffer, BUF_SIZE, "%s", "-123456789012345678901234567890");
+    TEST_ASSERT_EQUAL_INT(-1, read_int_from_buffer(buffer, &n));
+
+    snprintf(buffer, BUF_SIZE, "%s", "x");
+    TEST_ASSERT_EQUAL_INT(-1, read_int_from_buffer(buffer, &n));
+
+    snprintf(buffer, BUF_SIZE, "%s", "");
+    TEST_ASSERT_EQUAL_INT(-1, read_int_from_buffer(buffer, &n));
+
+    snprintf(buffer, BUF_SIZE, "%s", "123x456");
+    TEST_ASSERT_EQUAL_INT(-1, read_int_from_buffer(buffer, &n));
+
+    snprintf(buffer, BUF_SIZE, "%s", "123x");
+    TEST_ASSERT_EQUAL_INT(-1, read_int_from_buffer(buffer, &n));
+
+    snprintf(buffer, BUF_SIZE, "%s", "x456");
+    TEST_ASSERT_EQUAL_INT(-1, read_int_from_buffer(buffer, &n));
 }
 
 
@@ -212,8 +277,12 @@ void test_read_destination_subnet_from_buffer_rejects_empty_or_alpha_subnet()
 int main(void) {
     UNITY_BEGIN();
 
+    RUN_TEST(test_read_int_from_buffer_accepts_correct_values);
+    RUN_TEST(test_read_int_from_buffer_rejects_incorrect_values);
+
     RUN_TEST(test_read_ip_address_from_buffer_accepts_correct_ip_addresses);
     RUN_TEST(test_read_ip_address_from_buffer_rejects_incorrect_ip_addresses);
+
     RUN_TEST(test_read_destination_subnet_from_buffer_accepts_correct_ip_and_mask);
     RUN_TEST(test_read_destination_subnet_from_buffer_rejects_incorrect_ip_and_mask_limits);
     RUN_TEST(test_read_destination_subnet_from_buffer_rejects_incomplete_ip);
