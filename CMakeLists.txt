@@ -15,7 +15,7 @@ include_directories(
         ${CMAKE_SOURCE_DIR}
         ${RTM_DIR}/include
         ${RTM_DIR}/unity
-        ${RTM_DIR}/src
+        ${RTM_SRC}
 )
 
 # --------------------------------------------------------------------------------------------------
@@ -46,6 +46,7 @@ install(TARGETS rtm_server rtm_client DESTINATION ${RTM_DIR})
 
 set(TEST_DIR ${RTM_DIR}/tests)
 
-add_executable(test_input ${RTM_DIR}/unity/unity.c ${TEST_DIR}/test_input.c ${RTM_SRC}/input.c
-        utils.c)
+add_executable(test_input ${RTM_DIR}/unity/unity.c ${TEST_DIR}/test_input.c ${RTM_SRC}/input.c ${RTM_SRC}/rtm.c
+        ${RTM_DIR}/include/linked_list.h utils.c)
+target_link_libraries(test_input PUBLIC ${GCDS})
 install(TARGETS test_input DESTINATION ${TEST_DIR})

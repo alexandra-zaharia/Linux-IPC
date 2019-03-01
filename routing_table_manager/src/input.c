@@ -6,8 +6,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "rtm.h"
-#include "input.h"
 #include "utils.h"
+#include "input.h"
 
 
 /*
@@ -111,32 +111,30 @@ int read_destination_subnet_from_stdin(char *dst_subnet, char *ip_address, u16 *
 
 
 // Prompts the administrator to enter a new routing table record.
-void create_record()
+void create_record(RoutingTable *rtm)
 {
+    msg_body_t *record = routing_record_create();
     printf("Enter a new record:\n");
 
-    char sub_addr[IP_ADDR_LEN];
     char dst_subnet[IP_ADDR_LEN + 3];
-    u16 mask;
     printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
-    while (read_destination_subnet_from_stdin(dst_subnet, sub_addr, &mask) == -1) {
+    while (read_destination_subnet_from_stdin(dst_subnet, record->destination, &record->mask) == -1) {
         error_message("\tIncorrect destination subnet format. Try again.");
         printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
     }
 
-    char gw_addr[IP_ADDR_LEN];
     printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
-    while (read_ip_address_from_stdin(gw_addr) == -1) {
+    while(read_ip_address_from_stdin(record->gateway_ip) == -1) {
         error_message("\tIncorrect IP address format. Try again.");
         printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
     }
 
-    char oif[OIF_LEN];
     printf("\tEnter outgoing interface: ");
-    while (read_line(oif, OIF_LEN) == -1) {
+    while (read_line(record->oif, OIF_LEN) == -1) {
         error_message("\tInvalid outgoing interface. Try again.");
         printf("\tEnter outgoing interface: ");
     }
 
-    printf("Adding record %s/%hu %s %s\n", sub_addr, mask, gw_addr, oif);
+    printf("Adding record %s/%hu %s %s\n", record->destination, record->mask, record->gateway_ip, record->oif);
+    routing_table_insert(rtm, record);
 }

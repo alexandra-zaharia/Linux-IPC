@@ -4,29 +4,29 @@
 
 #include <stdio.h>
 #include "utils.h"
-#include "linked_list.h"
 #include "rtm.h"
 #include "input.h"
 
-
+void show_routing_menu(RoutingTable* rtm);
 char read_routing_menu_choice(RoutingTable *rtm);
 
 
 int main()
 {
-    printf("server\n");
     RoutingTable* rtm = routing_table_create();
+    show_routing_menu(rtm);
+    routing_table_free(rtm);
+}
 
+
+void show_routing_menu(RoutingTable* rtm)
+{
     char option;
     do {
         option = read_routing_menu_choice(rtm);
         switch (option) {
             case 'c':
-            case 'C': {
-                printf("[creating a record...]\n");
-                create_record();
-                rtm->size++; // TODO remove
-            }; break;
+            case 'C': create_record(rtm); break;
             case 'u':
             case 'U': {
                 if (rtm->size == 0) {
@@ -56,23 +56,7 @@ int main()
             default: printf("Unknown option '%c'.\n", option);
         }
     } while (option != 'q' && option != 'Q');
-
-    char ip_addr[IP_ADDR_LEN];
-    printf("Enter IP address (xxx.xxx.xxx.xxx): ");
-    printf("%s\n", read_ip_address_from_stdin(ip_addr) == 0 ? ip_addr : "invalid");
-
-    char dst_subnet[IP_ADDR_LEN + 3];
-    u16 mask;
-    printf("Enter dst subnet (xxx.xxx.xxx.xxx/yy): ");
-    if (read_destination_subnet_from_stdin(dst_subnet, ip_addr, &mask) == 0) {
-        printf("%s\n%hu\n", ip_addr, mask);
-    } else {
-        printf("invalid\n");
-    }
-
-    routing_table_free(rtm);
 }
-
 
 char read_routing_menu_choice(RoutingTable *rtm)
 {

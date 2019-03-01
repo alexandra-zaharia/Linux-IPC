@@ -24,7 +24,7 @@ typedef struct _msg_body { // RTM entry to create, update, or delete
     char destination[16];
     u16 mask;
     char gateway_ip[16];
-    char oif[OIF_LEN];
+    char oif[OIF_LEN];     // outgoing interface
 } msg_body_t;
 
 typedef struct _sync_msg { // operation on RTM
@@ -34,12 +34,15 @@ typedef struct _sync_msg { // operation on RTM
 
 typedef LinkedList RoutingTable;
 
-RoutingTable* routing_table_create();
+RoutingTable *routing_table_create();
 void routing_table_free(RoutingTable*);
 
-int routing_table_insert(RoutingTable*, msg_body_t*);
-int routing_table_update(RoutingTable*, char*, u16, char*, char*);
-int routing_table_delete(RoutingTable*, char*, u16);
-void routing_table_print(RoutingTable*);
+msg_body_t *routing_record_create();
+sync_msg_t *rtm_operation_create(OP_CODE, msg_body_t *);
+
+int routing_table_insert(RoutingTable *, msg_body_t *);
+int routing_table_update(RoutingTable *, char *, u16, char *, char *);
+int routing_table_delete(RoutingTable *, char *, u16);
+void routing_table_print(RoutingTable *);
 
 #endif //LINUX_IPC_RTM_H
