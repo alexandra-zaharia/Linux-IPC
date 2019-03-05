@@ -22,18 +22,19 @@ int main()
 void show_routing_menu(RoutingTable* rtm)
 {
     char option;
+    sync_msg_t sync_msg;
     do {
         option = read_routing_menu_choice(rtm);
         switch (option) {
             case 'c':
-            case 'C': create_record(rtm); break;
+            case 'C': sync_msg = create_record(rtm); break;
             case 'u':
             case 'U': {
                 if (rtm->size == 0) {
                     printf("Unknown option '%c'.\n", option);
                     break;
                 }
-                printf("[updating a record...]\n");
+                sync_msg = update_record(rtm);
             }; break;
             case 'd':
             case 'D': {
@@ -57,6 +58,7 @@ void show_routing_menu(RoutingTable* rtm)
         }
     } while (option != 'q' && option != 'Q');
 }
+
 
 char read_routing_menu_choice(RoutingTable *rtm)
 {

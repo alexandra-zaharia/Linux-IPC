@@ -110,15 +110,23 @@ int read_destination_subnet_from_stdin(char *dst_subnet, char *ip_address, u16 *
 }
 
 
-// Prompts the administrator to enter a new routing table record.
-void create_record(RoutingTable *rtm)
+/*
+ * Prompts the administrator to enter a new routing table record and returns the corresponding
+ * synchronization message the server needs to send to all connected clients.
+ */
+sync_msg_t create_record(RoutingTable *rtm)
 {
     msg_body_t *record = routing_record_create();
+    if (!record) {
+        routing_table_free(rtm);
+        exit(EXIT_FAILURE);
+    }
     printf("Enter a new record:\n");
 
     char dst_subnet[IP_ADDR_LEN + 3];
     printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
-    while (read_destination_subnet_from_stdin(dst_subnet, record->destination, &record->mask) == -1) {
+    while (read_destination_subnet_from_stdin(
+            dst_subnet, record->destination, &record->mask) == -1) {
         error_message("\tIncorrect destination subnet format. Try again.");
         printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
     }
@@ -135,6 +143,22 @@ void create_record(RoutingTable *rtm)
         printf("\tEnter outgoing interface: ");
     }
 
-    printf("Adding record %s/%hu %s %s\n", record->destination, record->mask, record->gateway_ip, record->oif);
+    printf("Adding record %s/%hu %s %s\n",
+            record->destination, record->mask, record->gateway_ip, record->oif);
     routing_table_insert(rtm, record);
+
+    sync_msg_t sync_msg = {CREATE, *record};
+    return sync_msg;
+}
+
+
+/*
+ * Prompts the administrator to update an existing routing table record and returns the
+ * corresponding synchronization message the server needs to send to all connected clients.
+ */
+sync_msg_t update_record(RoutingTable *rtm)
+{
+    sync_msg_t sync_msg;
+
+    return sync_msg;
 }
