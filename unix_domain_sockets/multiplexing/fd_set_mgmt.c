@@ -39,7 +39,7 @@ void remove_from_monitored_fd_set(int socket_fd)
 }
 
 
-// Clone all file descriptors from the monitored fd_set into the fd_est
+// Clone all file descriptors from the monitored file descriptor set into the fd_set
 void refresh_fd_set(fd_set *fd_set_ptr)
 {
     FD_ZERO(fd_set_ptr);
