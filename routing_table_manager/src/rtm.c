@@ -93,7 +93,38 @@ int routing_table_delete(RoutingTable* rt, msg_body_t* record)
 // Displays all records in the routing table to stdout.
 void routing_table_print(RoutingTable* rt)
 {
+    if (rt->size == 0) {
+        printf("The routing table has no entries.\n");
+        return;
+    }
 
+    printf("The routing table has the following ");
+    if (rt->size == 1)
+        printf("entry:\n");
+    else
+        printf("%u entries:\n", rt->size);
+
+    char *header_subnet = "Destination subnet";
+    char *header_gateway = "   Gateway IP   ";
+    char *header_oif = "Outgoing interface";
+    const int HDR_SIZE = 64;
+    char header[HDR_SIZE];
+    snprintf(header, HDR_SIZE, "%s  |  %s  |  %s", header_subnet, header_gateway, header_oif);
+    printf("\t%s\n\t", header);
+    for (int i = 0; i < strlen(header); i++)
+        printf("-");
+    printf("\n");
+
+    for (DNode *node = rt->head; node; node = node->next) {
+        msg_body_t *record = node->data;
+        char dst_subnet[IP_ADDR_LEN + 3];
+        snprintf(dst_subnet, IP_ADDR_LEN + 3, "%s/%hu", record->destination, record->mask);
+        printf("\t%*s  |  %*s  |  %*s\n",
+                (int) strlen(header_subnet), dst_subnet,
+                (int) strlen(header_gateway), record->gateway_ip,
+                (int) strlen(header_oif), record->oif);
+    }
+    printf("\n");
 }
 
 

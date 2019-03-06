@@ -50,7 +50,7 @@ void show_routing_menu(RoutingTable* rtm)
                     printf("Unknown option '%c'.\n", option);
                     break;
                 }
-                printf("[printing table...]\n");
+                routing_table_print(rtm);
             }; break;
             case 'q':
             case 'Q': printf("Bye!\n"); break;
