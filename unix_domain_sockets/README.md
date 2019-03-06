@@ -23,7 +23,7 @@ The starting point for these two implementations are the "Linux IPC from Scratch
 
 * When the client receives end of file (**EOF**) through Ctrl + D, it **`raise`s SIGINT** and thus terminates cleanly.
 
-* The servers (with and without multiplexing) as well as the client ignore SIGPIPE, which is sent when a write operation fails on a pipe or socket because there are no readers at the other end. The server needs to **ignore SIGPIPE** (received when a client disconnects) in order to handle the remaining clients or, at the very least, accept Ctrl + C from the user to shut down cleanly. The client needs to ignore SIGPIPE (received when the server disconnects) in order to shut down cleanly.
+* The servers (with and without multiplexing) as well as the client **ignore SIGPIPE**, which is sent when a write operation fails on a pipe or socket because there are no readers at the other end. The server needs to ignore SIGPIPE (received when a client disconnects) in order to handle the remaining clients or, at the very least, accept Ctrl + C from the user to shut down cleanly. The client needs to ignore SIGPIPE (received when the server disconnects) in order to shut down cleanly.
 
 ## TODO
 
