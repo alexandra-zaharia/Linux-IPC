@@ -111,41 +111,80 @@ int read_destination_subnet_from_stdin(char *dst_subnet, char *ip_address, u16 *
 
 
 /*
- * Prompts the administrator to enter a new routing table record and returns the corresponding
- * synchronization message the server needs to send to all connected clients.
+ * Reads information into and returns a routing table record for a create, update, or delete
+ * operation.
  */
-sync_msg_t create_record(RoutingTable *rtm)
+msg_body_t *_read_record(RoutingTable *rtm, OP_CODE op_code)
 {
     msg_body_t *record = routing_record_create();
     if (!record) {
         routing_table_free(rtm);
         exit(EXIT_FAILURE);
     }
-    printf("Enter a new record:\n");
 
-    char dst_subnet[IP_ADDR_LEN + 3];
-    printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
-    while (read_destination_subnet_from_stdin(
-            dst_subnet, record->destination, &record->mask) == -1) {
-        error_message("\tIncorrect destination subnet format. Try again.");
-        printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
+    switch (op_code) {
+        case CREATE: printf("Enter a new record:\n"); break;
+        case UPDATE: printf("Update an existing record:\n"); break;
+        case DELETE: printf("Delete an existing record:\n"); break;
+        default: error_message("Unknown operation code");
     }
 
-    printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
+    // Read destination subnet (all operations)
+    char dst_subnet[IP_ADDR_LEN + 3];
+    printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
+    int status = read_destination_subnet_from_stdin(dst_subnet, record->destination, &record->mask);
+    while (status == -1
+            || (op_code != CREATE && !routing_table_contains_dst(rtm, record->destination))
+            || (op_code != CREATE && !routing_table_contains_dst_subnet(
+                    rtm, record->destination, record->mask))) {
+        if (status == -1)
+            error_message("\tIncorrect destination subnet format. Try again.");
+        else
+            error_message("\tThe specified record does not exist in the routing table. Try again.");
+        printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
+        status = read_destination_subnet_from_stdin(dst_subnet, record->destination, &record->mask);
+    }
+
+    // Read gateway IP (for create and update operations)
+    switch (op_code) {
+        case CREATE: printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): "); break;
+        case UPDATE: printf("\tEnter new gateway IP (xxx.xxx.xxx.xxx): "); break;
+        case DELETE: break;
+        default: error_message("Unknown operation code");
+    }
     while(read_ip_address_from_stdin(record->gateway_ip) == -1) {
         error_message("\tIncorrect IP address format. Try again.");
         printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
     }
 
-    printf("\tEnter outgoing interface: ");
+    // Read outgoing interface (for create and update operations)
+    switch (op_code) {
+        case CREATE: printf("\tEnter outgoing interface: "); break;
+        case UPDATE: printf("\tEnter new outgoing interface: "); break;
+        case DELETE: break;
+        default: error_message("Unknown operation code");
+    }
     while (read_line(record->oif, OIF_LEN) == -1) {
         error_message("\tInvalid outgoing interface. Try again.");
         printf("\tEnter outgoing interface: ");
     }
 
-    printf("Adding record %s/%hu %s %s\n",
+    return record;
+}
+
+
+/*
+ * Prompts the administrator to enter a new routing table record and returns the corresponding
+ * synchronization message the server needs to send to all connected clients.
+ */
+sync_msg_t create_record(RoutingTable *rtm)
+{
+    msg_body_t *record = _read_record(rtm, CREATE);
+    printf("Adding record %s/%hu with gateway %s and outgoing interface %s\n",
             record->destination, record->mask, record->gateway_ip, record->oif);
-    routing_table_insert(rtm, record);
+    if (routing_table_insert(rtm, record) == -1)
+        error_message("Could not insert record.");
+    printf("\n");
 
     sync_msg_t sync_msg = {CREATE, *record};
     return sync_msg;
@@ -158,7 +197,14 @@ sync_msg_t create_record(RoutingTable *rtm)
  */
 sync_msg_t update_record(RoutingTable *rtm)
 {
-    sync_msg_t sync_msg;
+    msg_body_t *record = _read_record(rtm, UPDATE);
+    printf("Updating record %s/%hu with gateway %s and outgoing interface %s\n",
+           record->destination, record->mask, record->gateway_ip, record->oif);
+    if (routing_table_update(rtm, record) == -1)
+        error_message("Could not update record.");
+    printf("\n");
 
+    sync_msg_t sync_msg = {UPDATE, *record};
+    free(record);
     return sync_msg;
 }

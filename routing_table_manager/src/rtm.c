@@ -4,6 +4,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include "input.h"
 #include "rtm.h"
 
 #define MALLOC_ERROR(func, msg) fprintf(stderr, "%s: %s\n", (func), (msg)) // TODO move elsewhere
@@ -64,14 +66,25 @@ int routing_table_insert(RoutingTable* rt, msg_body_t* record)
  * Updates a routing record with a new gateway IP and a new outgoing interface. Returns 0 on success
  * and -1 on failure.
  */
-int routing_table_update(RoutingTable* rt, char* dst, u16 mask, char* gw_ip, char* oif)
+int routing_table_update(RoutingTable* rt, msg_body_t* record)
 {
-    return 0;
+    if (!routing_table_contains_dst_subnet(rt, record->destination, record->mask)) return -1;
+
+    for (DNode *node = rt->head; node; node = node->next) {
+        msg_body_t *current = node->data;
+        if (!strcmp(current->destination, record->destination) && current->mask == record->mask) {
+            strncpy(current->gateway_ip, record->gateway_ip, IP_ADDR_LEN);
+            strncpy(current->oif, record->oif, OIF_LEN);
+            return 0;
+        }
+    }
+
+    return -1;
 }
 
 
 // Deletes a routing record. Returns 0 on success and -1 on failure.
-int routing_table_delete(RoutingTable* rt, char* dst, u16 mask)
+int routing_table_delete(RoutingTable* rt, msg_body_t* record)
 {
     return 0;
 }
@@ -81,4 +94,29 @@ int routing_table_delete(RoutingTable* rt, char* dst, u16 mask)
 void routing_table_print(RoutingTable* rt)
 {
 
+}
+
+
+// Checkes whether the given destination IP exists in the routing table.
+bool routing_table_contains_dst(RoutingTable *rt, char *destination)
+{
+    for (DNode *node = rt->head; node; node = node->next) {
+        msg_body_t *record = node->data;
+        if (strncmp(destination, record->destination, strlen(record->destination)) == 0)
+            return true;
+    }
+    return false;
+}
+
+
+// Checks whether the given destination IP and subnet mask exist in the routing table.
+bool routing_table_contains_dst_subnet(RoutingTable *rt, char *destination, u16 mask)
+{
+    for (DNode *node = rt->head; node; node = node->next) {
+        msg_body_t *record = node->data;
+        if (strncmp(destination, record->destination, strlen(record->destination)) == 0
+                && mask == record->mask)
+            return true;
+    }
+    return false;
 }

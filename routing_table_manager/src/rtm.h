@@ -41,8 +41,11 @@ msg_body_t *routing_record_create();
 sync_msg_t *rtm_operation_create(OP_CODE, msg_body_t *);
 
 int routing_table_insert(RoutingTable *, msg_body_t *);
-int routing_table_update(RoutingTable *, char *, u16, char *, char *);
-int routing_table_delete(RoutingTable *, char *, u16);
+int routing_table_update(RoutingTable *, msg_body_t *);
+int routing_table_delete(RoutingTable *, msg_body_t *);
+
 void routing_table_print(RoutingTable *);
+bool routing_table_contains_dst(RoutingTable *, char *);
+bool routing_table_contains_dst_subnet(RoutingTable *, char *, u16);
 
 #endif //LINUX_IPC_RTM_H
