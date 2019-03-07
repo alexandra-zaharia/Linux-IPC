@@ -145,14 +145,16 @@ msg_body_t *_read_record(RoutingTable *rtm, OP_CODE op_code)
         status = read_destination_subnet_from_stdin(dst_subnet, record->destination, &record->mask);
     }
 
+    // Stop here for the delete operation
+    if (op_code == DELETE) return record;
+
     // Read gateway IP (for create and update operations)
     switch (op_code) {
         case CREATE: printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): "); break;
         case UPDATE: printf("\tEnter new gateway IP (xxx.xxx.xxx.xxx): "); break;
-        case DELETE: break;
         default: error_message("Unknown operation code");
     }
-    while(read_ip_address_from_stdin(record->gateway_ip) == -1) {
+    while (read_ip_address_from_stdin(record->gateway_ip) == -1) {
         error_message("\tIncorrect IP address format. Try again.");
         printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
     }
@@ -161,7 +163,6 @@ msg_body_t *_read_record(RoutingTable *rtm, OP_CODE op_code)
     switch (op_code) {
         case CREATE: printf("\tEnter outgoing interface: "); break;
         case UPDATE: printf("\tEnter new outgoing interface: "); break;
-        case DELETE: break;
         default: error_message("Unknown operation code");
     }
     while (read_line(record->oif, OIF_LEN) == -1) {
@@ -205,6 +206,24 @@ sync_msg_t update_record(RoutingTable *rtm)
     printf("\n");
 
     sync_msg_t sync_msg = {UPDATE, *record};
+    free(record);
+    return sync_msg;
+}
+
+
+/*
+ * Prompts the administrator to delete an existing routing table record and returns the
+ * corresponding synchronization message the server needs to send to all connected clients.
+ */
+sync_msg_t delete_record(RoutingTable *rtm)
+{
+    msg_body_t *record = _read_record(rtm, DELETE);
+    printf("Deleting record %s/%hu\n", record->destination, record->mask);
+    if (routing_table_delete(rtm, record) == -1)
+        error_message("Could not delete record.");
+    printf("\n");
+
+    sync_msg_t sync_msg = {DELETE, *record};
     free(record);
     return sync_msg;
 }

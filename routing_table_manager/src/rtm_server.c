@@ -42,7 +42,7 @@ void show_routing_menu(RoutingTable* rtm)
                     printf("Unknown option '%c'.\n", option);
                     break;
                 }
-                printf("[deleting a record...]\n");
+                sync_msg = delete_record(rtm);
             }; break;
             case 'p':
             case 'P': {

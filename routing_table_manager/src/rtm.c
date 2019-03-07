@@ -19,7 +19,7 @@ RoutingTable* routing_table_create()
 
 
 // Frees a routing table
-void routing_table_free(RoutingTable* rt)
+void routing_table_free(RoutingTable *rt)
 {
     for (DNode *node = rt->head; node; node = node->next) {
         msg_body_t *record = node->data;
@@ -56,7 +56,7 @@ sync_msg_t *rtm_operation_create(OP_CODE op_code, msg_body_t *record)
 
 
 // Inserts a new routing record into the routing table. Returns 0 on success and -1 on failure.
-int routing_table_insert(RoutingTable* rt, msg_body_t* record)
+int routing_table_insert(RoutingTable *rt, msg_body_t *record)
 {
     return rt->insert_end(rt, record);
 }
@@ -66,7 +66,7 @@ int routing_table_insert(RoutingTable* rt, msg_body_t* record)
  * Updates a routing record with a new gateway IP and a new outgoing interface. Returns 0 on success
  * and -1 on failure.
  */
-int routing_table_update(RoutingTable* rt, msg_body_t* record)
+int routing_table_update(RoutingTable *rt, msg_body_t *record)
 {
     if (!routing_table_contains_dst_subnet(rt, record->destination, record->mask)) return -1;
 
@@ -84,14 +84,28 @@ int routing_table_update(RoutingTable* rt, msg_body_t* record)
 
 
 // Deletes a routing record. Returns 0 on success and -1 on failure.
-int routing_table_delete(RoutingTable* rt, msg_body_t* record)
+int routing_table_delete(RoutingTable *rt, msg_body_t *record)
 {
+    int index = -1; // index of record to delete from the routing table
+    msg_body_t *current = NULL;
+
+    for (DNode *node = rt->head; node; node = node->next) {
+        ++index;
+        current = node->data;
+        if (!strcmp(current->destination, record->destination) && current->mask == record->mask)
+            break;
+    }
+
+    if (index == -1) return -1; // record not found
+    if (rt->remove_at(rt, index) == NULL) return -1;
+
+    free(current);
     return 0;
 }
 
 
 // Displays all records in the routing table to stdout.
-void routing_table_print(RoutingTable* rt)
+void routing_table_print(RoutingTable *rt)
 {
     if (rt->size == 0) {
         printf("The routing table has no entries.\n");
@@ -128,12 +142,12 @@ void routing_table_print(RoutingTable* rt)
 }
 
 
-// Checkes whether the given destination IP exists in the routing table.
+// Checks whether the given destination IP exists in the routing table.
 bool routing_table_contains_dst(RoutingTable *rt, char *destination)
 {
     for (DNode *node = rt->head; node; node = node->next) {
         msg_body_t *record = node->data;
-        if (strncmp(destination, record->destination, strlen(record->destination)) == 0)
+        if (strcmp(destination, record->destination) == 0)
             return true;
     }
     return false;
@@ -145,8 +159,7 @@ bool routing_table_contains_dst_subnet(RoutingTable *rt, char *destination, u16 
 {
     for (DNode *node = rt->head; node; node = node->next) {
         msg_body_t *record = node->data;
-        if (strncmp(destination, record->destination, strlen(record->destination)) == 0
-                && mask == record->mask)
+        if (strcmp(destination, record->destination) == 0 && mask == record->mask)
             return true;
     }
     return false;
