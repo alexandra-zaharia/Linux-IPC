@@ -13,6 +13,7 @@ void error_message(char *);
 void error_and_exit(char *);
 void status_message(char *);
 
+void remove_newline(char *);
 int read_line(char *, int);
 int read_int_from_stdin(int *);
 int read_int_from_buffer(const char *, int *);

@@ -30,20 +30,26 @@ void status_message(char *message)
 
 
 /*
- * Reads at most n characters (newline included) into the buffer. If present, the newline is
- * removed. Returns 0 on success and -1 on failure.
+ * Removes the newline character from the buffer, if present. Also flushes STDIN.
  */
-int read_line(char *buffer, const int n)
+void remove_newline(char *buffer)
 {
-    if (fgets(buffer, n, stdin) == NULL) return -1;
-
     char *p = strchr(buffer, '\n');
     if (p) {
         *p = '\0'; // replace newline with null character
     } else {
         while (getchar() != '\n'); // flush STDIN
     }
+}
 
+
+/*
+ * Reads at most n characters (newline included) into the buffer. If present, the newline is
+ * removed. Returns 0 on success and -1 on failure.
+ */
+int read_line(char *buffer, const int n) {
+    if (fgets(buffer, n, stdin) == NULL) return -1;
+    remove_newline(buffer);
     return 0;
 }
 
