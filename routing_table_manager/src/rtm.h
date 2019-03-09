@@ -6,7 +6,6 @@
 #define LINUX_IPC_RTM_H
 
 #include "linked_list.h"
-//#include "input.h"
 
 typedef enum { // operation code for possible actions to be taken on the routing table manager (RTM)
     CREATE,
