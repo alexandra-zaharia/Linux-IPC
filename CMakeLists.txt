@@ -16,6 +16,7 @@ include_directories(
         ${RTM_DIR}/include
         ${RTM_DIR}/unity
         ${RTM_SRC}
+        ${UDS_MP}
 )
 
 # --------------------------------------------------------------------------------------------------
@@ -36,7 +37,8 @@ install(TARGETS server_multiplexing client DESTINATION ${UDS_DIR}/multiplexing)
 
 find_library(GCDS gcds HINTS ${RTM_DIR}/lib)
 
-add_executable(rtm_server utils.c ${RTM_SRC}/rtm_server.c ${RTM_SRC}/rtm.c ${RTM_SRC}/input.c)
+add_executable(rtm_server utils.c ${RTM_SRC}/rtm_server.c ${RTM_SRC}/rtm.c ${RTM_SRC}/input.c
+        ${UDS_MP}/fd_set_mgmt.c)
 target_link_libraries(rtm_server PUBLIC ${GCDS})
 
 add_executable(rtm_client utils.c ${RTM_SRC}/rtm_client.c ${RTM_SRC}/rtm.c)
@@ -46,7 +48,7 @@ install(TARGETS rtm_server rtm_client DESTINATION ${RTM_DIR})
 
 set(TEST_DIR ${RTM_DIR}/tests)
 
-add_executable(test_input ${RTM_DIR}/unity/unity.c ${TEST_DIR}/test_input.c ${RTM_SRC}/input.c ${RTM_SRC}/rtm.c
-        ${RTM_DIR}/include/linked_list.h utils.c)
+add_executable(test_input ${RTM_DIR}/unity/unity.c ${TEST_DIR}/test_input.c ${RTM_SRC}/input.c
+        ${RTM_SRC}/rtm.c ${RTM_DIR}/include/linked_list.h utils.c)
 target_link_libraries(test_input PUBLIC ${GCDS})
 install(TARGETS test_input DESTINATION ${TEST_DIR})

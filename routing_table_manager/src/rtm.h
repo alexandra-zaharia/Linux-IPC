@@ -23,9 +23,9 @@ typedef unsigned short u16;
 #define OIF_LEN 32         // maximum length of outgoing interface string, including null character
 
 typedef struct _msg_body { // RTM entry to create, update, or delete
-    char destination[16];
+    char destination[IP_ADDR_LEN];
     u16 mask;
-    char gateway_ip[16];
+    char gateway_ip[IP_ADDR_LEN];
     char oif[OIF_LEN];     // outgoing interface
 } msg_body_t;
 

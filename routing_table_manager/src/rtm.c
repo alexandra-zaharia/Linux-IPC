@@ -58,7 +58,18 @@ sync_msg_t *rtm_operation_create(OP_CODE op_code, msg_body_t *record)
 // Inserts a new routing record into the routing table. Returns 0 on success and -1 on failure.
 int routing_table_insert(RoutingTable *rt, msg_body_t *record)
 {
-    return rt->insert_end(rt, record);
+    msg_body_t *actual_record = routing_record_create();
+    if (!actual_record) {
+        routing_table_free(rt);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(actual_record->destination, record->destination, IP_ADDR_LEN);
+    actual_record->mask = record->mask;
+    strncpy(actual_record->gateway_ip, record->gateway_ip, IP_ADDR_LEN);
+    strncpy(actual_record->oif, record->oif, OIF_LEN);
+
+    return rt->insert_end(rt, actual_record);
 }
 
 
