@@ -145,6 +145,50 @@ void admin_create_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, ms
 }
 
 
+void admin_update_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
+{
+    switch (*entry) {
+        case SUBNET: {
+            if (read_destination_subnet_from_buffer(buffer,
+                                                    record->destination, &record->mask) == -1) {
+                error_message("\tIncorrect destination subnet format. Try again.");
+            } else if (!routing_table_contains_dst_subnet(rtm, record->destination, record->mask)) {
+                error_message("\tThe specified record does not exist in the routing table. "
+                              "Try again.");
+            } else {
+                *entry = GATEWAY;
+                printf("\tEnter new gateway IP (xxx.xxx.xxx.xxx): ");
+            }
+        }; break;
+        case GATEWAY: {
+            if (read_ip_address_from_buffer(buffer) == -1) {
+                error_message("\tIncorrect IP address format. Try again.");
+            } else {
+                strncpy(record->gateway_ip, buffer, IP_ADDR_LEN);
+                *entry = OIF;
+                printf("\tEnter new outgoing interface: ");
+            }
+        }; break;
+        case OIF: {
+            if (strlen(buffer) > OIF_LEN) {
+                error_message("\tInvalid outgoing interface. Try again.");
+            } else {
+                strncpy(record->oif, buffer, OIF_LEN);
+                printf("Updating record %s/%hu with gateway %s and outgoing interface %s\n",
+                       record->destination, record->mask, record->gateway_ip, record->oif);
+                if (routing_table_update(rtm, record) == -1)
+                    error_message("Could not update record.");
+                printf("\n");
+
+                *state = IDLE;
+                *entry = SUBNET;
+            }
+        }; break;
+        default: error_message("\tUnknown entry type.");
+    }
+}
+
+
 // Handles console input in the routing table server process
 void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
 {
@@ -192,7 +236,7 @@ void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg
 
     switch (*state) {
         case CREATING: admin_create_record(buffer, state, entry, record); break;
-        case UPDATING: printf("Updating...\n"); break;
+        case UPDATING: admin_update_record(buffer, state, entry, record); break;
         case DELETING: printf("Deleting...\n"); break;
         default: printf("Unknown state\n");
     }
