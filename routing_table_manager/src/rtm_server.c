@@ -189,6 +189,25 @@ void admin_update_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, ms
 }
 
 
+void admin_delete_record(char *buffer, INPUT_STATE *state, msg_body_t *record)
+{
+    if (read_destination_subnet_from_buffer(buffer,
+                                            record->destination, &record->mask) == -1) {
+        error_message("\tIncorrect destination subnet format. Try again.");
+    } else if (!routing_table_contains_dst_subnet(rtm, record->destination, record->mask)) {
+        error_message("\tThe specified record does not exist in the routing table. "
+                      "Try again.");
+    } else {
+        printf("Deleting record %s/%hu\n", record->destination, record->mask);
+        if (routing_table_delete(rtm, record) == -1)
+            error_message("Could not delete record.");
+        printf("\n");
+
+        *state = IDLE;
+    }
+}
+
+
 // Handles console input in the routing table server process
 void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
 {
@@ -237,7 +256,7 @@ void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg
     switch (*state) {
         case CREATING: admin_create_record(buffer, state, entry, record); break;
         case UPDATING: admin_update_record(buffer, state, entry, record); break;
-        case DELETING: printf("Deleting...\n"); break;
+        case DELETING: admin_delete_record(buffer, state, record); break;
         default: printf("Unknown state\n");
     }
 }
