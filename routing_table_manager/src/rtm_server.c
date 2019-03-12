@@ -102,7 +102,12 @@ void handle_connection_initiation_request()
 }
 
 
-void admin_create_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
+/*
+ * Treats the current `buffer` as an input for record creation. Once a record has been created, the
+ * `state` becomes IDLE. The type of `entry` is SUBNET, GATEWAY, or OIF. The entries that have been
+ * read are stored in the specified `record`.
+ */
+void create_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
 {
     switch (*entry) {
         case SUBNET: {
@@ -145,7 +150,12 @@ void admin_create_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, ms
 }
 
 
-void admin_update_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
+/*
+ * Treats the current `buffer` as an input for record update. Once a record has been updated, the
+ * `state` becomes IDLE. The type of `entry` is SUBNET, GATEWAY, or OIF. The entries that have been
+ * read are stored in the specified `record`.
+ */
+void update_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
 {
     switch (*entry) {
         case SUBNET: {
@@ -189,7 +199,12 @@ void admin_update_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, ms
 }
 
 
-void admin_delete_record(char *buffer, INPUT_STATE *state, msg_body_t *record)
+/*
+ * Treats the current `buffer` as an input for record deletion. Once a record has been deleted, the
+ * `state` becomes IDLE. The subnet designating the record to delete is stored in the specified
+ * `record`.
+ */
+void delete_record(char *buffer, INPUT_STATE *state, msg_body_t *record)
 {
     if (read_destination_subnet_from_buffer(buffer,
                                             record->destination, &record->mask) == -1) {
@@ -254,9 +269,12 @@ void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg
     }
 
     switch (*state) {
-        case CREATING: admin_create_record(buffer, state, entry, record); break;
-        case UPDATING: admin_update_record(buffer, state, entry, record); break;
-        case DELETING: admin_delete_record(buffer, state, record); break;
+        case CREATING:
+            create_record(buffer, state, entry, record); break;
+        case UPDATING:
+            update_record(buffer, state, entry, record); break;
+        case DELETING:
+            delete_record(buffer, state, record); break;
         default: printf("Unknown state\n");
     }
 }
@@ -276,47 +294,7 @@ void shutdown_server(int sig)
 }
 
 
-void show_routing_menu_(RoutingTable* rtm)
-{
-    char option;
-    sync_msg_t sync_msg;
-    do {
-//        option = read_routing_menu_choice(rtm);
-        switch (option) {
-            case 'c':
-            case 'C': sync_msg = create_record(rtm); break;
-            case 'u':
-            case 'U': {
-                if (rtm->size == 0) {
-                    printf("Unknown option '%c'.\n", option);
-                    break;
-                }
-                sync_msg = update_record(rtm);
-            }; break;
-            case 'd':
-            case 'D': {
-                if (rtm->size == 0) {
-                    printf("Unknown option '%c'.\n", option);
-                    break;
-                }
-                sync_msg = delete_record(rtm);
-            }; break;
-            case 'p':
-            case 'P': {
-                if (rtm->size == 0) {
-                    printf("Unknown option '%c'.\n", option);
-                    break;
-                }
-                routing_table_print(rtm);
-            }; break;
-            case 'q':
-            case 'Q': printf("Bye!\n"); break;
-            default: printf("Unknown option '%c'.\n", option);
-        }
-    } while (option != 'q' && option != 'Q');
-}
-
-
+// Displays the admin routing menu
 void show_routing_menu()
 {
     if (rtm->size == 0) {
