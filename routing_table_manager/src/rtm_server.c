@@ -2,6 +2,15 @@
 // Created by Alexandra Zaharia on 13/02/19.
 //
 
+/*
+ * The server process maintains a routing table in which a record is defined by an IPv4 destination
+ * subnet, a gateway IPv4 address, and an outgoing interface. The administrator may create, update,
+ * or delete records to/from the routing table. When a new client connects, it receives the entire
+ * contents of the routing table. Whenever the administrator performs a create/update/delete
+ * operation, all connected clients are notified of the change and update their local copies of the
+ * routing table accordingly.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/un.h>
