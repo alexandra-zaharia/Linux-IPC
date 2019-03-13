@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 #include "rtm.h"
 #include "utils.h"
 #include "input.h"
@@ -107,4 +108,127 @@ int read_destination_subnet_from_stdin(char *dst_subnet, char *ip_address, u16 *
     char dst_subnet_copy[IP_ADDR_LEN + 3];
     strncpy(dst_subnet_copy, dst_subnet, IP_ADDR_LEN + 3);
     return read_destination_subnet_from_buffer(dst_subnet_copy, ip_address, mask);
+}
+
+
+/*
+ * Treats the current `buffer` as an input for record creation. Once a record has been created, the
+ * `state` becomes IDLE. The type of `entry` is SUBNET, GATEWAY, or OIF. The entries that have been
+ * read are stored in the specified `record`.
+ */
+void create_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry,
+                   msg_body_t *record)
+{
+    switch (*entry) {
+        case SUBNET: {
+            if (read_destination_subnet_from_buffer(buffer,
+                                                    record->destination, &record->mask) == -1) {
+                error_message("\tIncorrect destination subnet format. Try again.");
+            } else if (routing_table_contains_dst_subnet(rtm, record->destination, record->mask)) {
+                error_message("\tRouting table already contains the specified record. Try again.");
+            } else {
+                *entry = GATEWAY;
+                printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
+            }
+        }; break;
+        case GATEWAY: {
+            if (read_ip_address_from_buffer(buffer) == -1) {
+                error_message("\tIncorrect IP address format. Try again.");
+            } else {
+                strncpy(record->gateway_ip, buffer, IP_ADDR_LEN);
+                *entry = OIF;
+                printf("\tEnter outgoing interface: ");
+            }
+        }; break;
+        case OIF: {
+            if (strlen(buffer) > OIF_LEN) {
+                error_message("\tInvalid outgoing interface. Try again.");
+            } else {
+                strncpy(record->oif, buffer, OIF_LEN);
+                printf("Adding record %s/%hu with gateway %s and outgoing interface %s\n",
+                       record->destination, record->mask, record->gateway_ip, record->oif);
+                if (routing_table_insert(rtm, record) == -1)
+                    error_message("Could not insert record.");
+                printf("\n");
+
+                *state = IDLE;
+                *entry = SUBNET;
+            }
+        }; break;
+        default: error_message("\tUnknown entry type.");
+    }
+}
+
+
+/*
+ * Treats the current `buffer` as an input for record update. Once a record has been updated, the
+ * `state` becomes IDLE. The type of `entry` is SUBNET, GATEWAY, or OIF. The entries that have been
+ * read are stored in the specified `record`.
+ */
+void update_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry,
+                   msg_body_t *record)
+{
+    switch (*entry) {
+        case SUBNET: {
+            if (read_destination_subnet_from_buffer(buffer,
+                                                    record->destination, &record->mask) == -1) {
+                error_message("\tIncorrect destination subnet format. Try again.");
+            } else if (!routing_table_contains_dst_subnet(rtm, record->destination, record->mask)) {
+                error_message("\tThe specified record does not exist in the routing table. "
+                              "Try again.");
+            } else {
+                *entry = GATEWAY;
+                printf("\tEnter new gateway IP (xxx.xxx.xxx.xxx): ");
+            }
+        }; break;
+        case GATEWAY: {
+            if (read_ip_address_from_buffer(buffer) == -1) {
+                error_message("\tIncorrect IP address format. Try again.");
+            } else {
+                strncpy(record->gateway_ip, buffer, IP_ADDR_LEN);
+                *entry = OIF;
+                printf("\tEnter new outgoing interface: ");
+            }
+        }; break;
+        case OIF: {
+            if (strlen(buffer) > OIF_LEN) {
+                error_message("\tInvalid outgoing interface. Try again.");
+            } else {
+                strncpy(record->oif, buffer, OIF_LEN);
+                printf("Updating record %s/%hu with gateway %s and outgoing interface %s\n",
+                       record->destination, record->mask, record->gateway_ip, record->oif);
+                if (routing_table_update(rtm, record) == -1)
+                    error_message("Could not update record.");
+                printf("\n");
+
+                *state = IDLE;
+                *entry = SUBNET;
+            }
+        }; break;
+        default: error_message("\tUnknown entry type.");
+    }
+}
+
+
+/*
+ * Treats the current `buffer` as an input for record deletion. Once a record has been deleted, the
+ * `state` becomes IDLE. The subnet designating the record to delete is stored in the specified
+ * `record`.
+ */
+void delete_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, msg_body_t *record)
+{
+    if (read_destination_subnet_from_buffer(buffer,
+                                            record->destination, &record->mask) == -1) {
+        error_message("\tIncorrect destination subnet format. Try again.");
+    } else if (!routing_table_contains_dst_subnet(rtm, record->destination, record->mask)) {
+        error_message("\tThe specified record does not exist in the routing table. "
+                      "Try again.");
+    } else {
+        printf("Deleting record %s/%hu\n", record->destination, record->mask);
+        if (routing_table_delete(rtm, record) == -1)
+            error_message("Could not delete record.");
+        printf("\n");
+
+        *state = IDLE;
+    }
 }

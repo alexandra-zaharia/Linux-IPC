@@ -20,12 +20,12 @@
 int connection_socket;                         // master socket
 RoutingTable *rtm;                             // routing table manager
 
-
 void initialize_server();
+void show_routing_menu(RoutingTable *rtm);
 void handle_connection_initiation_request();
-void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record);
+void handle_admin_input(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry,
+        msg_body_t *record);
 void shutdown_server(int sig);
-void show_routing_menu();
 
 
 int main()
@@ -40,7 +40,7 @@ int main()
 
     while (1) {
         refresh_fd_set(&readfds);
-        if (state == IDLE) show_routing_menu();
+        if (state == IDLE) show_routing_menu(rtm);
         status_message("Waiting on select() system call.");
         select(get_max_fd() + 1, &readfds, NULL, NULL, NULL);
 
@@ -50,7 +50,7 @@ int main()
             memset(buffer, 0, BUF_SIZE);
             if (read(0, buffer, BUF_SIZE) == -1)
                 error_and_exit("Cannot read admin input.");
-            handle_admin_input(buffer, &state, &entry, &record);
+            handle_admin_input(rtm, buffer, &state, &entry, &record);
         }
     }
 }
@@ -90,6 +90,25 @@ void initialize_server()
 }
 
 
+// Displays the admin routing menu
+void show_routing_menu(RoutingTable *rtm)
+{
+    if (rtm->size == 0) {
+        printf("The routing table has no entries. Available options:\n");
+        printf("\tc - Create a record\n");
+        printf("\tq - Quit\n");
+    } else {
+        printf("The routing table has %d %s. Available options:\n",
+               rtm->size, rtm->size == 1 ? "entry" : "entries");
+        printf("\tc - Create a record\n");
+        printf("\tu - Update a record\n");
+        printf("\td - Delete a record\n");
+        printf("\tp - Print the routing table contents\n");
+        printf("\tq - Quit\n");
+    }
+}
+
+
 // Accepts a new connection from a client
 void handle_connection_initiation_request()
 {
@@ -102,129 +121,9 @@ void handle_connection_initiation_request()
 }
 
 
-/*
- * Treats the current `buffer` as an input for record creation. Once a record has been created, the
- * `state` becomes IDLE. The type of `entry` is SUBNET, GATEWAY, or OIF. The entries that have been
- * read are stored in the specified `record`.
- */
-void create_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
-{
-    switch (*entry) {
-        case SUBNET: {
-            if (read_destination_subnet_from_buffer(buffer,
-                                                    record->destination, &record->mask) == -1) {
-                error_message("\tIncorrect destination subnet format. Try again.");
-            } else if (routing_table_contains_dst_subnet(rtm, record->destination, record->mask)) {
-                error_message("\tRouting table already contains the specified record. Try again.");
-            } else {
-                *entry = GATEWAY;
-                printf("\tEnter gateway IP (xxx.xxx.xxx.xxx): ");
-            }
-        }; break;
-        case GATEWAY: {
-            if (read_ip_address_from_buffer(buffer) == -1) {
-                error_message("\tIncorrect IP address format. Try again.");
-            } else {
-                strncpy(record->gateway_ip, buffer, IP_ADDR_LEN);
-                *entry = OIF;
-                printf("\tEnter outgoing interface: ");
-            }
-        }; break;
-        case OIF: {
-            if (strlen(buffer) > OIF_LEN) {
-                error_message("\tInvalid outgoing interface. Try again.");
-            } else {
-                strncpy(record->oif, buffer, OIF_LEN);
-                printf("Adding record %s/%hu with gateway %s and outgoing interface %s\n",
-                       record->destination, record->mask, record->gateway_ip, record->oif);
-                if (routing_table_insert(rtm, record) == -1)
-                    error_message("Could not insert record.");
-                printf("\n");
-
-                *state = IDLE;
-                *entry = SUBNET;
-            }
-        }; break;
-        default: error_message("\tUnknown entry type.");
-    }
-}
-
-
-/*
- * Treats the current `buffer` as an input for record update. Once a record has been updated, the
- * `state` becomes IDLE. The type of `entry` is SUBNET, GATEWAY, or OIF. The entries that have been
- * read are stored in the specified `record`.
- */
-void update_record(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
-{
-    switch (*entry) {
-        case SUBNET: {
-            if (read_destination_subnet_from_buffer(buffer,
-                                                    record->destination, &record->mask) == -1) {
-                error_message("\tIncorrect destination subnet format. Try again.");
-            } else if (!routing_table_contains_dst_subnet(rtm, record->destination, record->mask)) {
-                error_message("\tThe specified record does not exist in the routing table. "
-                              "Try again.");
-            } else {
-                *entry = GATEWAY;
-                printf("\tEnter new gateway IP (xxx.xxx.xxx.xxx): ");
-            }
-        }; break;
-        case GATEWAY: {
-            if (read_ip_address_from_buffer(buffer) == -1) {
-                error_message("\tIncorrect IP address format. Try again.");
-            } else {
-                strncpy(record->gateway_ip, buffer, IP_ADDR_LEN);
-                *entry = OIF;
-                printf("\tEnter new outgoing interface: ");
-            }
-        }; break;
-        case OIF: {
-            if (strlen(buffer) > OIF_LEN) {
-                error_message("\tInvalid outgoing interface. Try again.");
-            } else {
-                strncpy(record->oif, buffer, OIF_LEN);
-                printf("Updating record %s/%hu with gateway %s and outgoing interface %s\n",
-                       record->destination, record->mask, record->gateway_ip, record->oif);
-                if (routing_table_update(rtm, record) == -1)
-                    error_message("Could not update record.");
-                printf("\n");
-
-                *state = IDLE;
-                *entry = SUBNET;
-            }
-        }; break;
-        default: error_message("\tUnknown entry type.");
-    }
-}
-
-
-/*
- * Treats the current `buffer` as an input for record deletion. Once a record has been deleted, the
- * `state` becomes IDLE. The subnet designating the record to delete is stored in the specified
- * `record`.
- */
-void delete_record(char *buffer, INPUT_STATE *state, msg_body_t *record)
-{
-    if (read_destination_subnet_from_buffer(buffer,
-                                            record->destination, &record->mask) == -1) {
-        error_message("\tIncorrect destination subnet format. Try again.");
-    } else if (!routing_table_contains_dst_subnet(rtm, record->destination, record->mask)) {
-        error_message("\tThe specified record does not exist in the routing table. "
-                      "Try again.");
-    } else {
-        printf("Deleting record %s/%hu\n", record->destination, record->mask);
-        if (routing_table_delete(rtm, record) == -1)
-            error_message("Could not delete record.");
-        printf("\n");
-
-        *state = IDLE;
-    }
-}
-
-
 // Handles console input in the routing table server process
-void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg_body_t *record)
+void handle_admin_input(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry,
+                        msg_body_t *record)
 {
     remove_newline(buffer);
     printf("Admin input: '%s'.\n", buffer);
@@ -246,7 +145,7 @@ void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg
             case 'C': {
                 *state = CREATING;
                 printf("Enter a new record:\n");
-                };break;
+            };break;
             case 'u':
             case 'U': {
                 *state = UPDATING;
@@ -256,7 +155,7 @@ void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg
             case 'D': {
                 *state = DELETING;
                 printf("Delete an existing record:\n");
-                }; break;
+            }; break;
             case 'p':
             case 'P': routing_table_print(rtm); break;
             case 'q':
@@ -270,11 +169,11 @@ void handle_admin_input(char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry, msg
 
     switch (*state) {
         case CREATING:
-            create_record(buffer, state, entry, record); break;
+            create_record(rtm, buffer, state, entry, record); break;
         case UPDATING:
-            update_record(buffer, state, entry, record); break;
+            update_record(rtm, buffer, state, entry, record); break;
         case DELETING:
-            delete_record(buffer, state, record); break;
+            delete_record(rtm, buffer, state, record); break;
         default: printf("Unknown state\n");
     }
 }
@@ -291,23 +190,4 @@ void shutdown_server(int sig)
     if (unlink(SOCKET_PATH) == -1)
         error_and_exit("Cannot unlink master socket.");
     exit(EXIT_SUCCESS);
-}
-
-
-// Displays the admin routing menu
-void show_routing_menu()
-{
-    if (rtm->size == 0) {
-        printf("The routing table has no entries. Available options:\n");
-        printf("\tc - Create a record\n");
-        printf("\tq - Quit\n");
-    } else {
-        printf("The routing table has %d %s. Available options:\n",
-               rtm->size, rtm->size == 1 ? "entry" : "entries");
-        printf("\tc - Create a record\n");
-        printf("\tu - Update a record\n");
-        printf("\td - Delete a record\n");
-        printf("\tp - Print the routing table contents\n");
-        printf("\tq - Quit\n");
-    }
 }
