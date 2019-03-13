@@ -2,7 +2,8 @@
 // Created by Alexandra Zaharia on 10/02/19.
 //
 
-/* This is a simple implementation of a client illustrating inter-process communication (IPC) via
+/*
+ * This is a simple implementation of a client illustrating inter-process communication (IPC) via
  * stream-based UNIX domain sockets. The server receives integers from a client process, until the
  * client sends the value 0 to the server. At this point, the server sends to the client process
  * the sum of the integers.
