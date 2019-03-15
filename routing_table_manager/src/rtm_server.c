@@ -26,7 +26,6 @@
 #define BACKLOG 128                            // maximum number of pending connections
 #define BUF_SIZE 32                            // size of input sent by the admin to the RTM
 
-int connection_socket;                         // master socket
 RoutingTable *rtm;                             // routing table manager
 
 void initialize_server();
@@ -126,6 +125,7 @@ void handle_connection_initiation_request()
     if (data_socket == -1)
         error_and_exit("Cannot accept client connection.");
     status_message("Connection accepted from client.");
+    printf("Client FD = %d\n", data_socket);
     add_to_monitored_fd_set(data_socket);
 }
 
@@ -135,7 +135,6 @@ void handle_admin_input(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENT
                         msg_body_t *record)
 {
     remove_newline(buffer);
-    printf("Admin input: '%s'.\n", buffer);
     if (*state == IDLE) {
         if (strlen(buffer) != 1) {
             printf("Unknown option '%s'.\n", buffer);
@@ -171,7 +170,8 @@ void handle_admin_input(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENT
             case 'Q': shutdown_server(SIGINT); break;
             default: printf("Unknown option '%c'.\n", buffer[0]);
         }
-        printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
+        if (buffer[0] != 'p' && buffer[0] != 'P')
+            printf("\tEnter destination subnet (xxx.xxx.xxx.xxx/yy): ");
         *entry = SUBNET;
         return;
     }

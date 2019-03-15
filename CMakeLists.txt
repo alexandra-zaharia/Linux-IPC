@@ -41,7 +41,7 @@ add_executable(rtm_server utils.c ${RTM_SRC}/rtm_server.c ${RTM_SRC}/rtm.c ${RTM
         ${UDS_MP}/fd_set_mgmt.c)
 target_link_libraries(rtm_server PUBLIC ${GCDS})
 
-add_executable(rtm_client utils.c ${RTM_SRC}/rtm_client.c ${RTM_SRC}/rtm.c)
+add_executable(rtm_client utils.c ${RTM_SRC}/rtm_client.c ${RTM_SRC}/rtm.c ${UDS_MP}/fd_set_mgmt.c)
 target_link_libraries(rtm_client PUBLIC ${GCDS})
 
 install(TARGETS rtm_server rtm_client DESTINATION ${RTM_DIR})

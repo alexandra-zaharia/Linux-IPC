@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include "utils.h"
-#include "linked_list.h"
 #include "rtm.h"
+#include "fd_set_mgmt.h"
 
 #define SOCKET_PATH "/tmp/RoutingTableSocket"  // master (connection) socket path
 
@@ -41,12 +41,37 @@ int main()
     signal(SIGPIPE, SIG_IGN);        // ignore SIGPIPE (i.e. when server disconnects)
 
     // Receive synchronization messages from the RTM server
-    sync_msg_t *sync_msg = NULL;
-    if (read(data_socket, sync_msg, sizeof(sync_msg_t *)) == -1)
-        error_and_exit("Error in reading synchronization message from the RTM server.");
-
-    // Close socket
-    shutdown_client(SIGINT);
+    sync_msg_t sync_msg;
+    while (1) {
+        memset(&sync_msg, 0, sizeof(sync_msg_t));
+        if (read(data_socket, &sync_msg, sizeof(sync_msg_t)) == -1)
+            error_and_exit("Error in reading synchronization message from the RTM server.");
+        printf("Received synchronization message from server: ");
+        switch (sync_msg.op_code) {
+            case CREATE: {
+                printf("CREATE\n");
+                printf("\tDestination subnet: '%s/%hu'\n",
+                       sync_msg.msg_body.destination, sync_msg.msg_body.mask);
+                printf("\tGateway: '%s'\n", sync_msg.msg_body.gateway_ip);
+                printf("\tOutgoing interface: '%s'\n", sync_msg.msg_body.oif);
+            };
+                break;
+            case UPDATE: {
+                printf("UPDATE\n");
+                printf("\tDestination subnet: '%s/%hu'\n",
+                       sync_msg.msg_body.destination, sync_msg.msg_body.mask);
+                printf("\tGateway: '%s'\n", sync_msg.msg_body.gateway_ip);
+                printf("\tOutgoing interface: '%s'\n", sync_msg.msg_body.oif);
+            };
+                break;
+            case DELETE: {
+                printf("DELETE\n");
+                printf("\tDestination subnet: '%s/%hu'\n",
+                       sync_msg.msg_body.destination, sync_msg.msg_body.mask);
+            };
+                break;
+        }
+    }
 }
 
 
@@ -54,6 +79,7 @@ int main()
 void shutdown_client(int sig)
 {
     close(data_socket);
+    remove_from_monitored_fd_set(data_socket);
     status_message("Connection closed.");
 
     exit(EXIT_SUCCESS);

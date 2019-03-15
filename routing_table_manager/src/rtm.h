@@ -7,6 +7,8 @@
 
 #include "linked_list.h"
 
+extern int connection_socket;  // master socket
+
 typedef enum { // operation code for possible actions to be taken on the routing table manager (RTM)
     CREATE,
     UPDATE,
@@ -40,11 +42,12 @@ RoutingTable *routing_table_create();
 void routing_table_free(RoutingTable*);
 
 msg_body_t *routing_record_create();
-sync_msg_t *rtm_operation_create(OP_CODE, msg_body_t *);
 
 int routing_table_insert(RoutingTable *, msg_body_t *);
 int routing_table_update(RoutingTable *, msg_body_t *);
 int routing_table_delete(RoutingTable *, msg_body_t *);
+
+void send_synchronization_message(OP_CODE, msg_body_t);
 
 void routing_table_print(RoutingTable *);
 bool routing_table_contains_dst(RoutingTable *, char *);

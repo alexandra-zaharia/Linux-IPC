@@ -5,10 +5,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "input.h"
 #include "rtm.h"
+#include "utils.h"
+#include "fd_set_mgmt.h"
 
 #define MALLOC_ERROR(func, msg) fprintf(stderr, "%s: %s\n", (func), (msg)) // TODO move elsewhere
+
+int monitored_fd_set[MAX_CLIENTS];
+int connection_socket;
 
 
 // Creates a new routing table.
@@ -38,20 +44,6 @@ msg_body_t *routing_record_create()
         return NULL;
     }
     return record;
-}
-
-
-// Creates an operation on a routing table from the provided operation code `op_code' and `record'.
-sync_msg_t *rtm_operation_create(OP_CODE op_code, msg_body_t *record)
-{
-    sync_msg_t *operation = malloc(sizeof(sync_msg_t));
-    if (!operation) {
-        MALLOC_ERROR(__func__, "Insufficient memory for routing table operation");
-        return NULL;
-    }
-    operation->op_code  = op_code;
-    operation->msg_body = *record;
-    return operation;
 }
 
 
@@ -114,6 +106,20 @@ int routing_table_delete(RoutingTable *rt, msg_body_t *record)
     return 0;
 }
 
+
+// Server sends a synchronization message to a client
+void send_synchronization_message(const OP_CODE op_code, const msg_body_t record)
+{
+    sync_msg_t sync_msg;
+    memset(&sync_msg, 0, sizeof(sync_msg_t));
+    sync_msg.op_code = op_code;
+    sync_msg.msg_body = record;
+
+    for (int i = 0; i < MAX_CLIENTS; i++)
+        if (monitored_fd_set[i] > 0 && monitored_fd_set[i] != connection_socket)
+            if (write(monitored_fd_set[i], &sync_msg, sizeof(sync_msg_t)) == -1)
+                error_and_exit("Cannot send synchronization message to client.");
+}
 
 // Displays all records in the routing table to stdout.
 void routing_table_print(RoutingTable *rt)

@@ -153,6 +153,7 @@ void create_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TY
 
                 *state = IDLE;
                 *entry = SUBNET;
+                send_synchronization_message(CREATE, *record);
             }
         }; break;
         default: error_message("\tUnknown entry type.");
@@ -203,6 +204,7 @@ void update_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TY
 
                 *state = IDLE;
                 *entry = SUBNET;
+                send_synchronization_message(UPDATE, *record);
             }
         }; break;
         default: error_message("\tUnknown entry type.");
@@ -230,5 +232,6 @@ void delete_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, msg_body
         printf("\n");
 
         *state = IDLE;
+        send_synchronization_message(DELETE, *record);
     }
 }
