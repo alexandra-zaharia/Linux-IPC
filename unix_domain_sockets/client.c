@@ -76,7 +76,7 @@ int main()
         }
         char write_successful[64];
         sprintf(write_successful,
-                "Number of bytes written: %zu; data sent: %d", num_written, value);
+                "Number of bytes written: %zd; data sent: %d", num_written, value);
         status_message(write_successful);
     } while (value != 0);
 
