@@ -10,7 +10,6 @@
 #include <signal.h>
 #include "utils.h"
 #include "rtm.h"
-#include "fd_set_mgmt.h"
 
 #define SOCKET_PATH "/tmp/RoutingTableSocket"  // master (connection) socket path
 
@@ -83,8 +82,6 @@ int main()
 void shutdown_client(int sig)
 {
     close(data_socket);
-    remove_from_monitored_fd_set(data_socket);
     status_message("Connection closed.");
-
     exit(EXIT_SUCCESS);
 }

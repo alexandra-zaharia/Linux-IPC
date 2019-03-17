@@ -103,6 +103,7 @@ int routing_table_delete(RoutingTable *rt, msg_body_t *record)
     if (rt->remove_at(rt, index) == NULL) return -1;
 
     free(current);
+
     return 0;
 }
 
@@ -118,8 +119,12 @@ void send_synchronization_message(const OP_CODE op_code, const msg_body_t record
     for (int i = 0; i < MAX_CLIENTS; i++)
         if (monitored_fd_set[i] > 0 && monitored_fd_set[i] != connection_socket)
             if (write(monitored_fd_set[i], &sync_msg, sizeof(sync_msg_t)) == -1) {
-                printf("Problem with data socket %d\n", monitored_fd_set[i]);
-                error_and_exit("Cannot send synchronization message to client.");
+                char disconnect_msg[128];
+                snprintf(disconnect_msg, 128,
+                        "Cannot send synchronization message to client via socket ID %d "
+                        "(client disconnected?).", monitored_fd_set[i]);
+                error_message(disconnect_msg);
+                remove_from_monitored_fd_set(monitored_fd_set[i]);
             }
 }
 

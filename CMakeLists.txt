@@ -49,6 +49,6 @@ install(TARGETS rtm_server rtm_client DESTINATION ${RTM_DIR})
 set(TEST_DIR ${RTM_DIR}/tests)
 
 add_executable(test_input ${RTM_DIR}/unity/unity.c ${TEST_DIR}/test_input.c ${RTM_SRC}/input.c
-        ${RTM_SRC}/rtm.c ${RTM_DIR}/include/linked_list.h utils.c)
+        ${RTM_SRC}/rtm.c ${RTM_DIR}/include/linked_list.h utils.c ${UDS_MP}/fd_set_mgmt.c)
 target_link_libraries(test_input PUBLIC ${GCDS})
 install(TARGETS test_input DESTINATION ${TEST_DIR})
