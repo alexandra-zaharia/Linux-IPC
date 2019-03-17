@@ -29,7 +29,7 @@
 RoutingTable *rtm;                             // routing table manager
 
 void initialize_server();
-void show_routing_menu(RoutingTable *rtm);
+
 void handle_connection_initiation_request();
 void handle_admin_input(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TYPE *entry,
         msg_body_t *record);
@@ -46,10 +46,10 @@ int main()
     fd_set readfds;
     char buffer[BUF_SIZE];
 
+    show_routing_menu(rtm);
     while (1) {
         refresh_fd_set(&readfds);
-        if (state == IDLE) show_routing_menu(rtm);
-        status_message("Waiting on select() system call.");
+        fflush(stdout);
         select(get_max_fd() + 1, &readfds, NULL, NULL, NULL);
 
         if (FD_ISSET(connection_socket, &readfds)) {
@@ -98,25 +98,6 @@ void initialize_server()
 }
 
 
-// Displays the admin routing menu
-void show_routing_menu(RoutingTable *rtm)
-{
-    if (rtm->size == 0) {
-        printf("The routing table has no entries. Available options:\n");
-        printf("\tc - Create a record\n");
-        printf("\tq - Quit\n");
-    } else {
-        printf("The routing table has %d %s. Available options:\n",
-               rtm->size, rtm->size == 1 ? "entry" : "entries");
-        printf("\tc - Create a record\n");
-        printf("\tu - Update a record\n");
-        printf("\td - Delete a record\n");
-        printf("\tp - Print the routing table contents\n");
-        printf("\tq - Quit\n");
-    }
-}
-
-
 // Accepts a new connection from a client
 void handle_connection_initiation_request()
 {
@@ -124,8 +105,8 @@ void handle_connection_initiation_request()
     int data_socket = accept(connection_socket, NULL, NULL);
     if (data_socket == -1)
         error_and_exit("Cannot accept client connection.");
+    printf("Received connection on data socket %d\n", data_socket);
     status_message("Connection accepted from client.");
-    printf("Client FD = %d\n", data_socket);
     add_to_monitored_fd_set(data_socket);
 }
 

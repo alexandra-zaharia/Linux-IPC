@@ -117,8 +117,10 @@ void send_synchronization_message(const OP_CODE op_code, const msg_body_t record
 
     for (int i = 0; i < MAX_CLIENTS; i++)
         if (monitored_fd_set[i] > 0 && monitored_fd_set[i] != connection_socket)
-            if (write(monitored_fd_set[i], &sync_msg, sizeof(sync_msg_t)) == -1)
+            if (write(monitored_fd_set[i], &sync_msg, sizeof(sync_msg_t)) == -1) {
+                printf("Problem with data socket %d\n", monitored_fd_set[i]);
                 error_and_exit("Cannot send synchronization message to client.");
+            }
 }
 
 // Displays all records in the routing table to stdout.

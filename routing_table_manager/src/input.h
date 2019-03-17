@@ -31,4 +31,6 @@ void update_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TY
                    msg_body_t *record);
 void delete_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, msg_body_t *record);
 
+void show_routing_menu(RoutingTable *rtm);
+
 #endif //LINUX_IPC_INPUT_H

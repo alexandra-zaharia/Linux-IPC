@@ -16,7 +16,6 @@
 
 int data_socket;                               // client socket
 
-
 void shutdown_client(int sig);
 
 
@@ -26,6 +25,7 @@ int main()
     data_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (data_socket == -1)
         error_and_exit("Cannot create client socket.");
+    printf("Data socket: %d\n", data_socket);
 
     // Construct server socket address
     struct sockaddr_un addr;
@@ -44,8 +44,10 @@ int main()
     sync_msg_t sync_msg;
     while (1) {
         memset(&sync_msg, 0, sizeof(sync_msg_t));
-        if (read(data_socket, &sync_msg, sizeof(sync_msg_t)) == -1)
+        ssize_t bytes_read = read(data_socket, &sync_msg, sizeof(sync_msg_t));
+        if (bytes_read == -1)
             error_and_exit("Error in reading synchronization message from the RTM server.");
+        if (bytes_read == 0) break;
         printf("Received synchronization message from server: ");
         switch (sync_msg.op_code) {
             case CREATE: {
@@ -72,6 +74,8 @@ int main()
                 break;
         }
     }
+
+    shutdown_client(SIGINT);
 }
 
 

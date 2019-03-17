@@ -154,6 +154,7 @@ void create_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TY
                 *state = IDLE;
                 *entry = SUBNET;
                 send_synchronization_message(CREATE, *record);
+                show_routing_menu(rtm);
             }
         }; break;
         default: error_message("\tUnknown entry type.");
@@ -205,6 +206,7 @@ void update_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TY
                 *state = IDLE;
                 *entry = SUBNET;
                 send_synchronization_message(UPDATE, *record);
+                show_routing_menu(rtm);
             }
         }; break;
         default: error_message("\tUnknown entry type.");
@@ -223,8 +225,7 @@ void delete_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, msg_body
                                             record->destination, &record->mask) == -1) {
         error_message("\tIncorrect destination subnet format. Try again.");
     } else if (!routing_table_contains_dst_subnet(rtm, record->destination, record->mask)) {
-        error_message("\tThe specified record does not exist in the routing table. "
-                      "Try again.");
+        error_message("\tThe specified record does not exist in the routing table. Try again.");
     } else {
         printf("Deleting record %s/%hu\n", record->destination, record->mask);
         if (routing_table_delete(rtm, record) == -1)
@@ -233,5 +234,25 @@ void delete_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, msg_body
 
         *state = IDLE;
         send_synchronization_message(DELETE, *record);
+        show_routing_menu(rtm);
+    }
+}
+
+
+// Displays the admin routing menu
+void show_routing_menu(RoutingTable *rtm)
+{
+    if (rtm->size == 0) {
+        printf("The routing table has no entries. Available options:\n");
+        printf("\tc - Create a record\n");
+        printf("\tq - Quit\n");
+    } else {
+        printf("The routing table has %d %s. Available options:\n",
+               rtm->size, rtm->size == 1 ? "entry" : "entries");
+        printf("\tc - Create a record\n");
+        printf("\tu - Update a record\n");
+        printf("\td - Delete a record\n");
+        printf("\tp - Print the routing table contents\n");
+        printf("\tq - Quit\n");
     }
 }
