@@ -14,7 +14,9 @@
 #define SOCKET_PATH "/tmp/RoutingTableSocket"  // master (connection) socket path
 
 int data_socket;                               // client socket
+RoutingTable *rtm;                             // routing table copy, local to this client
 
+void synchronize_with_server(sync_msg_t sync_msg);
 void shutdown_client(int sig);
 
 
@@ -41,46 +43,56 @@ int main()
 
     // Receive synchronization messages from the RTM server
     sync_msg_t sync_msg;
+    rtm = routing_table_create();
+
     while (1) {
         memset(&sync_msg, 0, sizeof(sync_msg_t));
         ssize_t bytes_read = read(data_socket, &sync_msg, sizeof(sync_msg_t));
         if (bytes_read == -1)
             error_and_exit("Error in reading synchronization message from the RTM server.");
-        if (bytes_read == 0) break;
-        printf("Received synchronization message from server: ");
-        switch (sync_msg.op_code) {
-            case CREATE: {
-                printf("CREATE\n");
-                printf("\tDestination subnet: '%s/%hu'\n",
-                       sync_msg.msg_body.destination, sync_msg.msg_body.mask);
-                printf("\tGateway: '%s'\n", sync_msg.msg_body.gateway_ip);
-                printf("\tOutgoing interface: '%s'\n", sync_msg.msg_body.oif);
-            };
-                break;
-            case UPDATE: {
-                printf("UPDATE\n");
-                printf("\tDestination subnet: '%s/%hu'\n",
-                       sync_msg.msg_body.destination, sync_msg.msg_body.mask);
-                printf("\tGateway: '%s'\n", sync_msg.msg_body.gateway_ip);
-                printf("\tOutgoing interface: '%s'\n", sync_msg.msg_body.oif);
-            };
-                break;
-            case DELETE: {
-                printf("DELETE\n");
-                printf("\tDestination subnet: '%s/%hu'\n",
-                       sync_msg.msg_body.destination, sync_msg.msg_body.mask);
-            };
-                break;
-        }
+        if (bytes_read == 0) break; // end of file
+        synchronize_with_server(sync_msg);
+        routing_table_print(rtm);
     }
 
     shutdown_client(SIGINT);
 }
 
 
+/*
+ * Handles a synchronization message received from the server by updating the local copy of the
+ * routing table manager accordingly.
+ */
+void synchronize_with_server(sync_msg_t sync_msg)
+{
+    char msg_rcvd[64];
+    switch (sync_msg.op_code) {
+        case CREATE: {
+            snprintf(msg_rcvd, 64, "Received synchronization message from server: CREATE");
+            status_message(msg_rcvd);
+            if (routing_table_insert(rtm, &sync_msg.msg_body) == -1)
+                error_message("Could not insert record.");
+        }; break;
+        case UPDATE: {
+            snprintf(msg_rcvd, 64, "Received synchronization message from server: UPDATE");
+            status_message(msg_rcvd);
+            if (routing_table_update(rtm, &sync_msg.msg_body) == -1)
+                error_message("Could not update record.");
+        }; break;
+        case DELETE: {
+            snprintf(msg_rcvd, 64, "Received synchronization message from server: DELETE");
+            status_message(msg_rcvd);
+            if (routing_table_delete(rtm, &sync_msg.msg_body) == -1)
+                error_message("Could not delete record.");
+        }; break;
+    }
+}
+
+
 // Handles SIGINT (Ctrl+C) signal by closing the client connection
 void shutdown_client(int sig)
 {
+    routing_table_free(rtm);
     close(data_socket);
     status_message("Connection closed.");
     exit(EXIT_SUCCESS);
