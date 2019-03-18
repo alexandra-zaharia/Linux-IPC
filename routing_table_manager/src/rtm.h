@@ -47,7 +47,9 @@ int routing_table_insert(RoutingTable *, msg_body_t *);
 int routing_table_update(RoutingTable *, msg_body_t *);
 int routing_table_delete(RoutingTable *, msg_body_t *);
 
-void send_synchronization_message(OP_CODE, msg_body_t);
+void dump_rtm_contents(RoutingTable *, int);
+sync_msg_t prepare_synchronization_message(OP_CODE, msg_body_t);
+void send_synchronization_message(sync_msg_t);
 
 void routing_table_print(RoutingTable *);
 bool routing_table_contains_dst(RoutingTable *, char *);

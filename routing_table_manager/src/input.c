@@ -153,7 +153,8 @@ void create_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TY
 
                 *state = IDLE;
                 *entry = SUBNET;
-                send_synchronization_message(CREATE, *record);
+                sync_msg_t sync_msg = prepare_synchronization_message(CREATE, *record);
+                send_synchronization_message(sync_msg);
                 show_routing_menu(rtm);
             }
         }; break;
@@ -205,7 +206,8 @@ void update_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, ENTRY_TY
 
                 *state = IDLE;
                 *entry = SUBNET;
-                send_synchronization_message(UPDATE, *record);
+                sync_msg_t sync_msg = prepare_synchronization_message(UPDATE, *record);
+                send_synchronization_message(sync_msg);
                 show_routing_menu(rtm);
             }
         }; break;
@@ -233,7 +235,8 @@ void delete_record(RoutingTable *rtm, char *buffer, INPUT_STATE *state, msg_body
         printf("\n");
 
         *state = IDLE;
-        send_synchronization_message(DELETE, *record);
+        sync_msg_t sync_msg = prepare_synchronization_message(DELETE, *record);
+        send_synchronization_message(sync_msg);
         show_routing_menu(rtm);
     }
 }

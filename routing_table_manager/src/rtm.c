@@ -24,7 +24,7 @@ RoutingTable* routing_table_create()
 }
 
 
-// Frees a routing table
+// Frees a routing table.
 void routing_table_free(RoutingTable *rt)
 {
     for (DNode *node = rt->head; node; node = node->next) {
@@ -108,25 +108,53 @@ int routing_table_delete(RoutingTable *rt, msg_body_t *record)
 }
 
 
-// Server sends a synchronization message to a client
-void send_synchronization_message(const OP_CODE op_code, const msg_body_t record)
+// The server sends the synchronization message `sync_msg` to the client connected on `data_socket`.
+void _send_synchronization_message(sync_msg_t sync_msg, int data_socket)
+{
+    if (write(data_socket, &sync_msg, sizeof(sync_msg_t)) == -1) {
+        char disconnect_msg[128];
+        snprintf(disconnect_msg, 128,
+                "Cannot send synchronization message to client via socket ID %d "
+                "(client disconnected?).", data_socket);
+        error_message(disconnect_msg);
+        remove_from_monitored_fd_set(data_socket);
+    }
+}
+
+
+// Dumps the contents of the server's routing table to the client connected on `data_socket`.
+void dump_rtm_contents(RoutingTable *rt, int data_socket)
+{
+    for (DNode *node = rt->head; node; node = node->next) {
+        msg_body_t *record = node->data;
+        sync_msg_t sync_msg;
+        memset(&sync_msg, 0, sizeof(sync_msg_t));
+        sync_msg.op_code = CREATE;
+        sync_msg.msg_body = *record;
+        _send_synchronization_message(sync_msg, data_socket);
+    }
+}
+
+
+// Returns a synchronization message with the specified `op_code` and message body.
+sync_msg_t prepare_synchronization_message(OP_CODE op_code, msg_body_t record)
 {
     sync_msg_t sync_msg;
     memset(&sync_msg, 0, sizeof(sync_msg_t));
     sync_msg.op_code = op_code;
     sync_msg.msg_body = record;
+    return sync_msg;
+}
 
+
+// Server sends a synchronization message to a client
+void send_synchronization_message(sync_msg_t sync_msg)
+{
     for (int i = 0; i < MAX_CLIENTS; i++)
         if (monitored_fd_set[i] > 0 && monitored_fd_set[i] != connection_socket)
-            if (write(monitored_fd_set[i], &sync_msg, sizeof(sync_msg_t)) == -1) {
-                char disconnect_msg[128];
-                snprintf(disconnect_msg, 128,
-                        "Cannot send synchronization message to client via socket ID %d "
-                        "(client disconnected?).", monitored_fd_set[i]);
-                error_message(disconnect_msg);
-                remove_from_monitored_fd_set(monitored_fd_set[i]);
-            }
+            _send_synchronization_message(sync_msg, monitored_fd_set[i]);
 }
+
 
 // Displays all records in the routing table to stdout.
 void routing_table_print(RoutingTable *rt)

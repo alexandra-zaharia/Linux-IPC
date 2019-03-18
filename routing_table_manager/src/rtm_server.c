@@ -108,6 +108,7 @@ void handle_connection_initiation_request()
     printf("Received connection on data socket %d\n", data_socket);
     status_message("Connection accepted from client.");
     add_to_monitored_fd_set(data_socket);
+    dump_rtm_contents(rtm, data_socket);
 }
 
 
