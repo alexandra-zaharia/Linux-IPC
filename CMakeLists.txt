@@ -10,6 +10,7 @@ set(RTM_SRC ${RTM_DIR}/src)
 set(UDS_DIR unix_domain_sockets)
 set(UDS_NMP ${UDS_DIR}/no_multiplexing)
 set(UDS_MP ${UDS_DIR}/multiplexing)
+set(MQ_DIR posix_message_queues)
 
 include_directories(
         ${CMAKE_SOURCE_DIR}
@@ -20,7 +21,7 @@ include_directories(
 )
 
 # --------------------------------------------------------------------------------------------------
-# Unix domain sockets
+# UNIX domain sockets
 # --------------------------------------------------------------------------------------------------
 
 add_executable(client utils.c ${UDS_DIR}/client.c)
@@ -30,6 +31,16 @@ install(TARGETS server_no_multiplexing client DESTINATION ${UDS_NMP})
 
 add_executable(server_multiplexing utils.c ${UDS_MP}/server.c ${UDS_MP}/fd_set_mgmt.c)
 install(TARGETS server_multiplexing client DESTINATION ${UDS_DIR}/multiplexing)
+
+# --------------------------------------------------------------------------------------------------
+# POSIX message queues
+# --------------------------------------------------------------------------------------------------
+
+add_executable(mq_server utils.c ${MQ_DIR}/mq_server.c)
+add_executable(mq_client utils.c ${MQ_DIR}/mq_client.c)
+target_link_libraries(mq_server PUBLIC rt)
+target_link_libraries(mq_client PUBLIC rt)
+install(TARGETS mq_server mq_client DESTINATION ${MQ_DIR})
 
 # --------------------------------------------------------------------------------------------------
 # Routing table manager project
