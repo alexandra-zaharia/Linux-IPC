@@ -16,10 +16,10 @@
 #include <mqueue.h>
 #include "utils.h"
 
-#define MSG_QUEUE_PATH "/mqueue"       // message queue path
-#define MAX_MESSAGES 10                // maximum number of messages in the message queue
-#define QUEUE_PERMISSIONS 0660         // read and write access for user and group
-#define INT_LEN 12                     // maximum number of characters for an integer
+#define MSG_QUEUE_PATH "/mqueue"   // message queue path
+#define MAX_MESSAGES 10            // maximum number of messages in the message queue
+#define QUEUE_PERMISSIONS 0660     // read and write access for user and group
+#define INT_LEN 12                 // maximum number of characters for an integer
 
 int mq_fd = -1;                    // message queue file descriptor
 
@@ -63,8 +63,7 @@ int main()
                 char err_msg[64];
                 snprintf(err_msg, 64, "Ignoring message '%s' (not an integer).", input);
                 error_message(err_msg);
-            };
-
+            }
         }
     }
 }
@@ -78,6 +77,7 @@ void shutdown_client(int sig)
         error_and_exit("Cannot close message queue.");
     }
 
+    // Only server (receiver) process unlinks the queue, such that multiple clients are accepted
     if (mq_unlink(MSG_QUEUE_PATH) == -1) {
         perror("mq_unlink");
         error_and_exit("Cannot unlink message queue.");

@@ -48,8 +48,9 @@ int main()
             error_message("Not an integer. Try again.");
             continue;
         };
+        if (value == 0) break;
 
-        if (mq_send(mq_fd, input, strlen(input) + 1, 0)) {
+        if (mq_send(mq_fd, input, strlen(input) + 1, 0) == -1) {
             perror("mq_send");
             error_message("Cannot place message in the message queue.");
         }
@@ -65,11 +66,6 @@ void shutdown_client(int sig)
     if (mq_close(mq_fd) == -1) {
         perror("mq_close");
         error_and_exit("Cannot close message queue.");
-    }
-
-    if (mq_unlink(MSG_QUEUE_PATH) == -1) {
-        perror("mq_unlink");
-        error_and_exit("Cannot unlink message queue.");
     }
 
     exit(EXIT_SUCCESS);
