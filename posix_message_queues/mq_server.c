@@ -5,8 +5,7 @@
 /*
  * This is a simple implementation of a server illustrating inter-process communication (IPC) via
  * POSIX message queues. The client process sends integers to the server process, until the value 0
- * is read. The server reads the integers from the message queue and sends the sum of the integer
- * back to the client process, via another message queue.
+ * is read. The server reads the integers from the message queue and prints them to STDOUT.
  */
 
 #include <stdio.h>

@@ -8,6 +8,8 @@ This is a collection of mini-projects I did while learning Linux inter-process c
 ## Structure
 This repo contains several projects (each of them has a README providing more information), organized as follows:
 
+* [`posix_message_queues`](https://github.com/alexandra-zaharia/Linux-IPC/tree/master/posix_message_queues) -- IPC via POSIX message queues (the server process receives integers sent by the client process)
+ 
 * [`routing_table_manager`](https://github.com/alexandra-zaharia/Linux-IPC/tree/master/routing_table_manager) -- IPC via UNIX domain sockets, signals, and shared memory (the server process maintains a routing table that is synchronized across all clients)
 
 * [`unix_domain_sockets`](https://github.com/alexandra-zaharia/Linux-IPC/tree/master/unix_domain_sockets) -- IPC via stream-based UNIX domain sockets (the server process computes sums of values that are sent out by clients)
