@@ -11,6 +11,7 @@ set(UDS_DIR unix_domain_sockets)
 set(UDS_NMP ${UDS_DIR}/no_multiplexing)
 set(UDS_MP ${UDS_DIR}/multiplexing)
 set(MQ_DIR posix_message_queues)
+set(SHM_DIR posix_shared_memory)
 
 include_directories(
         ${CMAKE_SOURCE_DIR}
@@ -41,6 +42,16 @@ add_executable(mq_client utils.c ${MQ_DIR}/mq_client.c)
 target_link_libraries(mq_server PUBLIC rt)
 target_link_libraries(mq_client PUBLIC rt)
 install(TARGETS mq_server mq_client DESTINATION ${MQ_DIR})
+
+# --------------------------------------------------------------------------------------------------
+# Shared memory
+# --------------------------------------------------------------------------------------------------
+
+add_executable(shm_reader utils.c ${SHM_DIR}/shm_reader.c)
+add_executable(shm_writer utils.c  ${SHM_DIR}/shm_writer.c)
+target_link_libraries(shm_reader PUBLIC rt)
+target_link_libraries(shm_writer PUBLIC rt)
+install(TARGETS shm_reader shm_writer DESTINATION ${SHM_DIR})
 
 # --------------------------------------------------------------------------------------------------
 # Routing table manager project
