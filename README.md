@@ -15,9 +15,8 @@ This repo contains several projects (each of them has a README providing more in
 * [`unix_domain_sockets`](https://github.com/alexandra-zaharia/Linux-IPC/tree/master/unix_domain_sockets) -- IPC via stream-based UNIX domain sockets (the server process computes sums of values that are sent out by clients)
 
 ## Compiling and running the code examples
-Binaries for all programs are provided in the [`bin`](https://github.com/alexandra-zaharia/Linux-IPC/tree/master/bin) directory (for Linux x86_64).
 
-Alternatively, they can be compiled using `cmake` and `make`, as follows:
+Binaries can be compiled using `cmake` and `make`, as follows:
 
 ```
 git clone https://github.com/alexandra-zaharia/Linux-IPC.git 
