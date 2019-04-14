@@ -3,10 +3,7 @@
 //
 
 #include <stdio.h>
-//#include <memory.h>
-//#include <sys/shm.h>
-#include <sys/mman.h>
-#include <fcntl.h>
+#include <signal.h>
 #include "shared_memory.h"
 #include "utils.h"
 
@@ -26,4 +23,27 @@ int main()
         MAP_SHARED,             // shared memory is accessible by different processes
         shm_fd,                 // file descriptor for the shared memory
         0);                     // offset from base address of the physical memory to be mapped
+    if (shm_region == MAP_FAILED)
+        error_and_exit("Cannot map memory.");
+
+    int value = -1;
+    do {
+        char input[INT_LEN];
+        printf("Enter integer to write in shared memory (0 to stop): ");
+        if (read_line(input, INT_LEN) == -1) {
+            error_message("EOF, raising SIGINT.");
+            raise(SIGINT);
+        }
+        if (read_int_from_buffer(input, &value) == -1) {
+            error_message("Not an integer. Try again.");
+            continue;
+        }
+        if (value == 0) continue;
+
+        memset(shm_region, 0, SHM_SIZE);
+        memcpy(shm_region, input, SHM_SIZE);
+    } while (value != 0);
+
+    munmap(shm_region, SHM_SIZE);
+    close(shm_fd);
 }
