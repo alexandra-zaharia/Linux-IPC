@@ -12,8 +12,10 @@
 
 void shutdown_reader(int sig);
 void handle_missing_writer(int sig);
-void *shm_region;
-int shm_fd;
+
+void *shm_region; // shared memory from which this process reads data
+int shm_fd;       // shared memory file descriptor returned by shm_open
+
 
 int main()
 {
